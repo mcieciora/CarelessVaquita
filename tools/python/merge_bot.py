@@ -49,10 +49,9 @@ class MergeBot:
                     if pull_request in active_pulls:
                         print(f"#{pull_request} could not be merged automatically. Proceeding with next pull request.")
                         continue
-                    else:
-                        print(f"#{pull_request} merged successfully, "
-                              f"but experienced difficulties with branch deletion.")
-                        break
+                    print(f"#{pull_request} merged successfully, "
+                          f"but experienced difficulties with branch deletion.")
+                    break
             print(f"Pull request #{pull_request.number} status is {pull_request.mergeable_state}.")
 
     @staticmethod

@@ -1,11 +1,11 @@
-pytest==8.3.3
-pytest-cov==6.0.0
-pylint==3.3.1
+pytest==8.3.4
+coverage==7.6.10
+pylint==3.3.3
 pylint-pytest==1.1.7
 flake8==7.1.1
 black==24.10.0
-ruff==0.8.1
-bandit==1.8.0
+ruff==0.9.3
+bandit==1.8.2
 pydocstyle==6.3.0
 radon==6.0.1
-mypy==1.13.0
+mypy==1.14.1
