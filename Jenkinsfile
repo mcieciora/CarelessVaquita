@@ -10,6 +10,7 @@ pipeline {
         TEST_GROUPS = getValue("TEST_GROUP", "all")
         REGULAR_BUILD = getValue("REGULAR_BUILD", true)
         BRANCH_TO_USE = getValue("BRANCH", env.BRANCH_NAME)
+        IS_NIGHTLY = getValue("IS_NIGHTLY", false)
         REPO_URL = "git@github.com:mcieciora/CarelessVaquita.git"
         DOCKERHUB_REPO = "mcieciora/careless_vaquita"
         FORCE_DOCKER_IMAGE_BUILD = getValue("FORCE_BUILD", false)
@@ -259,7 +260,7 @@ pipeline {
                 stage ("Push docker image") {
                     when {
                         expression {
-                            return env.BRANCH_TO_USE == "master" || env.BRANCH_TO_USE == "develop"
+                            return env.BRANCH_TO_USE == "master" || env.BRANCH_TO_USE == "develop" && env.IS_NIGHTLY == false
                         }
                     }
                     steps {
@@ -282,7 +283,7 @@ pipeline {
                 stage ("Push tag") {
                     when {
                         expression {
-                            return env.BRANCH_TO_USE == "master"
+                            return env.BRANCH_TO_USE == "master" && env.IS_NIGHTLY == false
                         }
                     }
                     steps {
