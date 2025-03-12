@@ -44,18 +44,6 @@ pipeline {
                 }
             }
         }
-        stage("Prepare workspace for Jenkinsfile testing") {
-            when {
-                expression {
-                    return env.CUSTOM_WORKSPACE == "true"
-                }
-            }
-            steps {
-                script {
-                    sh "cp -r tools/resources/resource_project_files/* ."
-                }
-            }
-        }
         stage ("Prepare docker images") {
             parallel {
                 stage ("Build test image") {
@@ -141,7 +129,7 @@ pipeline {
                 stage ("bandit") {
                     steps {
                         script {
-                            sh "docker run --rm test_image python -m bandit -r src automated_tests tools/python"
+                            sh "docker run --rm test_image python -m bandit -c automated_tests/bandit.yaml -r src automated_tests tools/python"
                         }
                     }
                 }
