@@ -3,7 +3,7 @@ Integer build_test_image
 
 pipeline {
     agent {
-        label 'executor'
+        label "executor"
     }
     environment {
         FLAG = getValue("FLAG", "smoke")
@@ -12,7 +12,6 @@ pipeline {
         BRANCH_TO_USE = getValue("BRANCH", env.BRANCH_NAME)
         IS_NIGHTLY = getValue("IS_NIGHTLY", false)
         REPO_URL = "git@github.com:mcieciora/CarelessVaquita.git"
-        DOCKERHUB_REPO = "mcieciora/careless_vaquita"
         FORCE_DOCKER_IMAGE_BUILD = getValue("FORCE_BUILD", false)
         HADOLINT_VERSION = "v2.12.0-alpine"
         SHELLCHECK_VERSION = "v0.10.0"
@@ -25,13 +24,14 @@ pipeline {
             steps {
                 script {
                     def BRANCH_REV = env.BRANCH_TO_USE.equals("develop") || env.BRANCH_TO_USE.equals("master") ? "HEAD^1" : "develop"
-                    withCredentials([sshUserPrivateKey(credentialsId: "agent_${env.NODE_NAME}", keyFileVariable: 'key')]) {
+                    withCredentials([sshUserPrivateKey(credentialsId: "agent_${env.NODE_NAME}", keyFileVariable: "key")]) {
                         sh 'GIT_SSH_COMMAND="ssh -i $key"'
                         checkout scmGit(branches: [[name: "*/${BRANCH_TO_USE}"]], extensions: [], userRemoteConfigs: [[url: "${env.REPO_URL}"]])
                     }
                     currentBuild.description = "Branch: ${env.BRANCH_TO_USE}\nFlag: ${env.FLAG}\nGroups: ${env.TEST_GROUPS}"
                     build_test_image = sh(script: "git diff --name-only \$(git rev-parse HEAD) \$(git rev-parse origin/${BRANCH_REV}) | grep -e automated_tests -e src -e requirements -e tools/python",
                                           returnStatus: true)
+                    sh "source .config"
                 }
             }
         }
@@ -289,7 +289,7 @@ pipeline {
                     steps {
                         script {
                             def TAG_NAME = "${env.BRANCH_TO_USE}-${curDate}"
-                            withCredentials([sshUserPrivateKey(credentialsId: "agent_${env.NODE_NAME}", keyFileVariable: 'key')]) {
+                            withCredentials([sshUserPrivateKey(credentialsId: "agent_${env.NODE_NAME}", keyFileVariable: "key")]) {
                                 sh 'GIT_SSH_COMMAND="ssh -i $key"'
                                 sh "git tag -a $TAG_NAME -m $TAG_NAME && git push origin $TAG_NAME"
                             }

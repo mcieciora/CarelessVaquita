@@ -2,7 +2,7 @@ def customImage
 
 pipeline {
     agent {
-        label 'executor'
+        label "executor"
     }
     parameters {
         string(name: "BRANCH", defaultValue: "develop", description: "Execution branch.")
