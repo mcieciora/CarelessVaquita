@@ -44,18 +44,6 @@ pipeline {
                 }
             }
         }
-        stage("Prepare workspace for Jenkinsfile testing") {
-            when {
-                expression {
-                    return env.CUSTOM_WORKSPACE == "true"
-                }
-            }
-            steps {
-                script {
-                    sh "cp -r tools/resources/resource_project_files/* ."
-                }
-            }
-        }
         stage ("Prepare docker images") {
             parallel {
                 stage ("Build test image") {
