@@ -6,6 +6,7 @@ pipelineJob("ParametrizedTestPipeline_INPUT.PROJECT_NAME") {
         stringParam("BRANCH", "develop", "Execution branch.")
         booleanParam("CUSTOM_WORKSPACE", false, "If true workspace will be set up from tools/resources.")
         booleanParam("FORCE_BUILD", false, "Force Docker to build test_image.")
+        booleanParam("IS_NIGHTLY", false, "Set nightly flag as true.")
     }
     definition {
         cpsScm {

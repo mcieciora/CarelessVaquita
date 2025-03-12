@@ -12,6 +12,7 @@ pipeline {
         string(name: 'BRANCH', defaultValue: 'develop', description: "Execution branch.")
         booleanParam(name: "CUSTOM_WORKSPACE", defaultValue: false, description: "If true workspace will be set up from tools/resources.")
         booleanParam(name: "FORCE_BUILD", defaultValue: false, description: "Force Docker to build test_image.")
+        booleanParam(name: "IS_NIGHTLY", defaultValue: false, description: "Set nightly flag as true.")
     }
     environment {
         FLAG = getValue("FLAG", "smoke")
