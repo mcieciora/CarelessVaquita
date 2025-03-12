@@ -2,41 +2,55 @@ pipeline {
     agent {
         label 'executor'
     }
+    environment {
+        DOCKERHUB_REPO = "mcieciora/careless_vaquita"
+        TRIVY_VERSION = "0.59.0"
+        SCOUT_VERSION = "1.16.3"
+        DIVE_VERSION = "v0.12"
+    }
     stages {
         stage ("Analyze images") {
-            parallel {
-                stage ("docker scout") {
-                    steps {
-                        script {
-                            withCredentials([usernamePassword(credentialsId: "dockerhub_id", usernameVariable: "USERNAME", passwordVariable: "PASSWORD")]) {
-                                sh "docker login --username $USERNAME --password $PASSWORD"
-                                sh "chmod +x tools/shell_scripts/scan_docker_scout.sh"
-                                return_value = sh(script: "tools/shell_scripts/scan_docker_scout.sh", returnStdout: true).trim()
+            matrix {
+                axes {
+                    axis {
+                        name "TAG"
+                        values "latest", "test_image", "merge_bot"
+                    }
+                }
+                stages {
+                    stage ("docker scout") {
+                        steps {
+                            script {
+                                withCredentials([usernamePassword(credentialsId: "dockerhub_id", usernameVariable: "USERNAME", passwordVariable: "PASSWORD")]) {
+                                    sh "docker login --username $USERNAME --password $PASSWORD"
+                                    sh "chmod +x tools/shell_scripts/scan_docker_scout.sh"
+                                    return_value = sh(script: "tools/shell_scripts/scan_docker_scout.sh ${TAG}", returnStdout: true).trim()
+                                    if (return_value.contains("Script failed, because vulnerabilities were found.")) {
+                                        unstable(return_value)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    stage ("trivy") {
+                        steps {
+                            script {
+                                sh "chmod +x tools/shell_scripts/scan_docker_trivy.sh"
+                                return_value = sh(script: "tools/shell_scripts/scan_docker_trivy.sh ${TAG}", returnStdout: true).trim()
                                 if (return_value.contains("Script failed, because vulnerabilities were found.")) {
                                     unstable(return_value)
                                 }
                             }
                         }
                     }
-                }
-                stage ("trivy") {
-                    steps {
-                        script {
-                            sh "chmod +x tools/shell_scripts/scan_docker_trivy.sh"
-                            return_value = sh(script: "tools/shell_scripts/scan_docker_trivy.sh", returnStdout: true).trim()
-                            if (return_value.contains("Script failed, because vulnerabilities were found.")) {
-                                unstable(return_value)
-                            }
-                        }
-                    }
-                }
-                stage ("dive") {
-                    steps {
-                        script {
-                            sh "chmod +x tools/shell_scripts/scan_docker_dive.sh"
-                            return_value = sh(script: "tools/shell_scripts/scan_docker_dive.sh", returnStdout: true).trim()
-                            if (return_value.contains("Script failed, because vulnerabilities were found.")) {
-                                unstable(return_value)
+                    stage ("dive") {
+                        steps {
+                            script {
+                                sh "chmod +x tools/shell_scripts/scan_docker_dive.sh"
+                                return_value = sh(script: "tools/shell_scripts/scan_docker_dive.sh ${TAG}", returnStdout: true).trim()
+                                if (return_value.contains("Script failed, because vulnerabilities were found.")) {
+                                    unstable(return_value)
+                                }
                             }
                         }
                     }

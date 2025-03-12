@@ -42,7 +42,8 @@ pipeline {
                             def build = build job: 'ParametrizedTestPipeline_CarelessVaquita',
                             parameters: [
                                 string(name: 'FLAG', value: DEFAULT_NIGHTLY_FLAG),
-                                string(name: 'BRANCH', value: 'develop')
+                                string(name: 'BRANCH', value: 'develop'),
+                                booleanParam(name: 'IS_NIGHTLY', value: true)
                             ]
                         }
                     }
@@ -53,7 +54,8 @@ pipeline {
                             def build = build job: 'ParametrizedTestPipeline_CarelessVaquita',
                             parameters: [
                                 string(name: 'FLAG', value: DEFAULT_NIGHTLY_FLAG),
-                                string(name: 'BRANCH', value: 'master')
+                                string(name: 'BRANCH', value: 'master'),
+                                booleanParam(name: 'IS_NIGHTLY', value: true)
                             ]
                         }
                     }
