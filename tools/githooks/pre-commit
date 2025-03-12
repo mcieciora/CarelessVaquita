@@ -16,17 +16,6 @@ else
     echo "[INFO] Jenkinsfile check succeeded."
 fi
 
-echo "Running Dockerfiles linting..."
-tools/githooks_scripts/lint_docker_files.sh
-DOCKERFILE_CHECK_EXIT_CODE=$?
-
-if [ $DOCKERFILE_CHECK_EXIT_CODE -ne 0 ]; then
-    echo "[ERROR] Dockerfiles check failed."
-    exit 1
-else
-    echo "[INFO] Dockerfiles check succeeded."
-fi
-
 echo "Running lint_python.sh..."
 tools/githooks_scripts/lint_python.sh
 PYTHON_LINTING_EXIT_CODE=$?

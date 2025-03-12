@@ -13,6 +13,8 @@ pipeline {
         REPO_URL = "git@github.com:mcieciora/CarelessVaquita.git"
         DOCKERHUB_REPO = "mcieciora/careless_vaquita"
         FORCE_DOCKER_IMAGE_BUILD = getValue("FORCE_BUILD", false)
+        HADOLINT_VERSION = "v2.12.0-alpine"
+        SHELLCHECK_VERSION = "v0.10.0"
     }
     options {
         skipDefaultCheckout()
@@ -117,7 +119,7 @@ pipeline {
                 stage ("bandit") {
                     steps {
                         script {
-                            sh "docker run --rm test_image python -m bandit src automated_tests tools/python"
+                            sh "docker run --rm test_image python -m bandit -r src automated_tests tools/python"
                         }
                     }
                 }
@@ -167,6 +169,22 @@ pipeline {
                     steps {
                         script {
                             sh "docker run --rm test_image python tools/python/scan_for_skipped_tests.py"
+                        }
+                    }
+                }
+                stage ("Lint Dockerfiles") {
+                    steps {
+                        script {
+                            sh "chmod +x tools/shell_scripts/lint_docker_files.sh"
+                            sh "tools/shell_scripts/lint_docker_files.sh"
+                        }
+                    }
+                }
+                stage ("Shellcheck") {
+                    steps {
+                        script {
+                            sh "chmod +x tools/shell_scripts/lint_shell_scripts.sh"
+                            sh "tools/shell_scripts/lint_shell_scripts.sh"
                         }
                     }
                 }
