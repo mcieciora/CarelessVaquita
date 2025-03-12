@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# shellcheck source=/dev/null
 source .env
 
 JENKINS_FILE_CHECK_FILE=$(mktemp XXXXX)
