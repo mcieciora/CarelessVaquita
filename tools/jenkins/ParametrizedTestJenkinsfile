@@ -20,10 +20,7 @@ pipeline {
         REGULAR_BUILD = getValue("REGULAR_BUILD", true)
         BRANCH_TO_USE = getValue("BRANCH", env.BRANCH_NAME)
         IS_NIGHTLY = getValue("IS_NIGHTLY", false)
-        REPO_URL = "git@github.com:mcieciora/CarelessVaquita.git"
         FORCE_DOCKER_IMAGE_BUILD = getValue("FORCE_BUILD", false)
-        HADOLINT_VERSION = "v2.12.0-alpine"
-        SHELLCHECK_VERSION = "v0.10.0"
     }
     options {
         skipDefaultCheckout()
@@ -40,7 +37,6 @@ pipeline {
                     currentBuild.description = "Branch: ${env.BRANCH_TO_USE}\nFlag: ${env.FLAG}\nGroups: ${env.TEST_GROUPS}"
                     build_test_image = sh(script: "git diff --name-only \$(git rev-parse HEAD) \$(git rev-parse origin/${BRANCH_REV}) | grep -e automated_tests -e src -e requirements -e tools/python",
                                           returnStatus: true)
-                    sh "source .config"
                 }
             }
         }
@@ -55,7 +51,7 @@ pipeline {
                     }
                     steps {
                         script {
-                            withEnv(getProjectEnv()) {
+                            withEnv(getToolsConfig()) {
                                 sh "docker build --no-cache -t test_image -f automated_tests/Dockerfile ."
                                 if (env.BRANCH_TO_USE == "master" || env.BRANCH_TO_USE == "develop") {
                                     sh "docker tag test_image ${DOCKERHUB_REPO}:test_image"
@@ -77,8 +73,10 @@ pipeline {
                     }
                     steps {
                         script {
-                            sh "docker pull ${DOCKERHUB_REPO}:test_image"
-                            sh "docker tag ${DOCKERHUB_REPO}:test_image test_image"
+                            withEnv(getToolsConfig()) {
+                                sh "docker pull ${DOCKERHUB_REPO}:test_image"
+                                sh "docker tag ${DOCKERHUB_REPO}:test_image test_image"
+                            }
                         }
                     }
                 }
@@ -334,6 +332,6 @@ def getValue(variable, defaultValue) {
 }
 
 
-def getProjectEnv() {
+def getToolsConfig() {
     return readFile(".tools_config").split("\n") as List
 }

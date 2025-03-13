@@ -1,3 +1,0 @@
-JENKINS_SERVER_HOST=http://jenkins:8080/
-GITHUB_REPO=CarelessVaquita
-DOCKERHUB_REPO=mcieciora/careless_vaquita

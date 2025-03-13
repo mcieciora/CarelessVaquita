@@ -2,12 +2,6 @@ pipeline {
     agent {
         label "executor"
     }
-    environment {
-        DOCKERHUB_REPO = "mcieciora/careless_vaquita"
-        TRIVY_VERSION = "0.59.0"
-        SCOUT_VERSION = "1.16.3"
-        DIVE_VERSION = "v0.12"
-    }
     stages {
         stage ("Analyze images") {
             matrix {

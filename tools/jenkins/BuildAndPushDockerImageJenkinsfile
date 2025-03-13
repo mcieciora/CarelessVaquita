@@ -7,10 +7,6 @@ pipeline {
         string(name: "CUSTOM_TAG", description: "Tag of pushed image.")
         string(name: "DOCKERFILE_PATH", description: "Path to Dockerfile.")
     }
-    environment {
-        REPO_URL = "https://github.com/mcieciora/CarelessVaquita.git"
-        DOCKERHUB_REPO = "mcieciora/careless_vaquita"
-    }
     options {
         skipDefaultCheckout()
     }

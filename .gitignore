@@ -121,8 +121,6 @@ celerybeat.pid
 
 # Credentials
 .credentials
-# Tools config
-.tools_config
 .venv
 env/
 venv/

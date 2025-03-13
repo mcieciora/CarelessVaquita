@@ -5,10 +5,6 @@ pipeline {
     triggers {
         cron("H/15 * * * *")
     }
-    environment {
-        REPO_URL = "git@github.com:mcieciora/CarelessVaquita.git"
-        DOCKERHUB_REPO = "mcieciora/careless_vaquita"
-    }
     options {
         skipDefaultCheckout()
     }

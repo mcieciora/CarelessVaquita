@@ -5,9 +5,6 @@ pipeline {
     triggers {
         cron("H 21 * * *")
     }
-    environment {
-        DEFAULT_NIGHTLY_FLAG = "unittest"
-    }
     options {
         skipDefaultCheckout()
     }
