@@ -31,7 +31,6 @@ pipeline {
                     currentBuild.description = "Branch: ${env.BRANCH_TO_USE}\nFlag: ${env.FLAG}\nGroups: ${env.TEST_GROUPS}"
                     build_test_image = sh(script: "git diff --name-only \$(git rev-parse HEAD) \$(git rev-parse origin/${BRANCH_REV}) | grep -e automated_tests -e src -e requirements -e tools/python",
                                           returnStatus: true)
-                    sh "source .config"
                 }
             }
         }
@@ -46,12 +45,14 @@ pipeline {
                     }
                     steps {
                         script {
-                            sh "docker build --no-cache -t test_image -f automated_tests/Dockerfile ."
-                            if (env.BRANCH_TO_USE == "master" || env.BRANCH_TO_USE == "develop") {
-                                sh "docker tag test_image ${DOCKERHUB_REPO}:test_image"
-                                withCredentials([usernamePassword(credentialsId: "dockerhub_id", usernameVariable: "USERNAME", passwordVariable: "PASSWORD")]) {
-                                    sh "docker login --username $USERNAME --password $PASSWORD"
-                                    sh "docker push ${DOCKERHUB_REPO}:test_image"
+                            withEnv(getProjectEnv()) {
+                                sh "docker build --no-cache -t test_image -f automated_tests/Dockerfile ."
+                                if (env.BRANCH_TO_USE == "master" || env.BRANCH_TO_USE == "develop") {
+                                    sh "docker tag test_image ${DOCKERHUB_REPO}:test_image"
+                                    withCredentials([usernamePassword(credentialsId: "dockerhub_id", usernameVariable: "USERNAME", passwordVariable: "PASSWORD")]) {
+                                        sh "docker login --username $USERNAME --password $PASSWORD"
+                                        sh "docker push ${DOCKERHUB_REPO}:test_image"
+                                    }
                                 }
                             }
                         }
@@ -320,4 +321,9 @@ pipeline {
 
 def getValue(variable, defaultValue) {
     return params.containsKey(variable) ? params.get(variable) : defaultValue
+}
+
+
+def getProjectEnv() {
+    return readFile(".tools_config").split("\n") as List
 }
