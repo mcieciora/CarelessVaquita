@@ -9,11 +9,20 @@ pipeline {
         skipDefaultCheckout()
     }
     stages {
+        stage ("Get tools config") {
+            steps {
+                script {
+                    sh "curl -OL https://raw.githubusercontent.com/mcieciora/CarelessVaquita/refs/heads/${SCRIPT_BRANCH}/.tools_config"
+                }
+            }
+        }
         stage ("Pull merge bot image") {
             steps {
                 script {
-                    sh "docker pull ${DOCKERHUB_REPO}:merge_bot"
-                    sh "docker tag ${DOCKERHUB_REPO}:merge_bot merge_bot"
+                    withEnv(getToolsConfig()) {
+                        sh "docker pull ${DOCKERHUB_REPO}:merge_bot"
+                        sh "docker tag ${DOCKERHUB_REPO}:merge_bot merge_bot"
+                    }
                 }
             }
         }
@@ -34,9 +43,15 @@ pipeline {
     post {
         always {
             script {
-                sh "docker rmi ${DOCKERHUB_REPO}:merge_bot"
-                cleanWs()
+                withEnv(getToolsConfig()) {
+                    sh "docker rmi ${DOCKERHUB_REPO}:merge_bot"
+                    cleanWs()
+                }
             }
         }
     }
+}
+
+def getToolsConfig() {
+    return readFile(".tools_config").split("\n") as List
 }

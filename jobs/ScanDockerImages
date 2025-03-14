@@ -1,4 +1,7 @@
 pipelineJob("ScanDockerImages_INPUT.PROJECT_NAME") {
+    parameters {
+        stringParam("SCRIPT_BRANCH", "develop", "Execution branch.")
+    }
     definition {
         cpsScm {
             scm {

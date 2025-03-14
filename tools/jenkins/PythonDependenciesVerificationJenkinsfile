@@ -14,9 +14,12 @@ pipeline {
         stage ("Checkout branch") {
             steps {
                 script {
-                    withCredentials([sshUserPrivateKey(credentialsId: "agent_${NODE_NAME}", keyFileVariable: "key")]) {
-                        sh 'GIT_SSH_COMMAND="ssh -i $key"'
-                        git branch: params.BRANCH, url: REPO_URL
+                    sh "curl -OL https://raw.githubusercontent.com/mcieciora/CarelessVaquita/refs/heads/${BRANCH}/.tools_config"
+                    withEnv(getToolsConfig()) {
+                        withCredentials([sshUserPrivateKey(credentialsId: "agent_${NODE_NAME}", keyFileVariable: "key")]) {
+                            sh 'GIT_SSH_COMMAND="ssh -i $key"'
+                            git branch: params.BRANCH, url: REPO_URL
+                        }
                     }
                     currentBuild.description = "Branch: ${BRANCH}"
                 }
@@ -25,12 +28,14 @@ pipeline {
         stage ("Prepare test image") {
             steps {
                 script {
-                    if (params.BRANCH == "develop" || params.BRANCH == "master") {
-                        sh "docker pull ${DOCKERHUB_REPO}:test_image"
-                        sh "docker tag ${DOCKERHUB_REPO}:test_image test_image"
-                    }
-                    else {
-                        sh "docker build --no-cache -t test_image -f automated_tests/Dockerfile ."
+                    withEnv(getToolsConfig()) {
+                        if (params.BRANCH == "develop" || params.BRANCH == "master") {
+                            sh "docker pull ${DOCKERHUB_REPO}:test_image"
+                            sh "docker tag ${DOCKERHUB_REPO}:test_image test_image"
+                        }
+                        else {
+                            sh "docker build --no-cache -t test_image -f automated_tests/Dockerfile ."
+                        }
                     }
                 }
             }
@@ -49,14 +54,20 @@ pipeline {
     post {
         always {
             script {
-                if (params.BRANCH == "develop" || params.BRANCH == "master") {
-                    sh "docker rmi ${DOCKERHUB_REPO}:test_image"
-                }
-                else {
-                    sh "docker rmi test_image"
+                withEnv(getToolsConfig()) {
+                    if (params.BRANCH == "develop" || params.BRANCH == "master") {
+                        sh "docker rmi ${DOCKERHUB_REPO}:test_image"
+                    }
+                    else {
+                        sh "docker rmi test_image"
+                    }
                 }
                 cleanWs()
             }
         }
     }
+}
+
+def getToolsConfig() {
+    return readFile(".tools_config").split("\n") as List
 }

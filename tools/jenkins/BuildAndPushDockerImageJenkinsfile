@@ -14,18 +14,23 @@ pipeline {
         stage ("Checkout branch") {
             steps {
                 script {
-                    git branch: BRANCH, url: REPO_URL
+                    sh "curl -OL https://raw.githubusercontent.com/mcieciora/CarelessVaquita/refs/heads/${BRANCH}/.tools_config"
+                    withEnv(getToolsConfig()) {
+                        git branch: BRANCH, url: REPO_URL
+                    }
                 }
             }
         }
         stage ("Build and push") {
             steps {
                 script {
-                    sh "docker build --no-cache -t custom_image -f ${DOCKERFILE_PATH} ."
-                    sh "docker tag custom_image ${DOCKERHUB_REPO}:${CUSTOM_TAG}"
-                    withCredentials([usernamePassword(credentialsId: "dockerhub_id", usernameVariable: "USERNAME", passwordVariable: "PASSWORD")]) {
-                        sh "docker login --username $USERNAME --password $PASSWORD"
-                        sh "docker push ${DOCKERHUB_REPO}:${CUSTOM_TAG}"
+                    withEnv(getToolsConfig()) {
+                        sh "docker build --no-cache -t custom_image -f ${DOCKERFILE_PATH} ."
+                        sh "docker tag custom_image ${DOCKERHUB_REPO}:${CUSTOM_TAG}"
+                        withCredentials([usernamePassword(credentialsId: "dockerhub_id", usernameVariable: "USERNAME", passwordVariable: "PASSWORD")]) {
+                            sh "docker login --username $USERNAME --password $PASSWORD"
+                            sh "docker push ${DOCKERHUB_REPO}:${CUSTOM_TAG}"
+                        }
                     }
                 }
             }
@@ -37,4 +42,8 @@ pipeline {
             cleanWs()
         }
     }
+}
+
+def getToolsConfig() {
+    return readFile(".tools_config").split("\n") as List
 }

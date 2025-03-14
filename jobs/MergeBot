@@ -28,6 +28,9 @@ pipelineJob("MergeBot_INPUT.PROJECT_NAME/PromoteBranch_INPUT.PROJECT_NAME") {
 }
 
 pipelineJob("MergeBot_INPUT.PROJECT_NAME/MergeBot_INPUT.PROJECT_NAME") {
+    parameters {
+        stringParam("SCRIPT_BRANCH", "develop", "Execution branch.")
+    }
     triggers {
         cron("H/15 * * * *")
     }
