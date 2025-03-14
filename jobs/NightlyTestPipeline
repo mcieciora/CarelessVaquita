@@ -1,4 +1,7 @@
 pipelineJob("NightlyTestPipeline_INPUT.PROJECT_NAME") {
+    parameters {
+        stringParam("SCRIPT_BRANCH", "develop", "Execution branch.")
+    }
     triggers {
         cron("H 21 * * *")
     }
@@ -9,7 +12,7 @@ pipelineJob("NightlyTestPipeline_INPUT.PROJECT_NAME") {
                     remote {
                         url("INPUT.PROJECT_URL")
                     }
-                    branch('*/develop')
+                    branch('*/${SCRIPT_BRANCH}')
                 }
             }
             scriptPath("tools/jenkins/NightlyTestJenkinsfile")

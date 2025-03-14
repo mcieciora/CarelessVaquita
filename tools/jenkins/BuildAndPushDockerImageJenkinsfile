@@ -25,7 +25,7 @@ pipeline {
             steps {
                 script {
                     withEnv(getToolsConfig()) {
-                        sh "docker build --no-cache -t custom_image -f ${DOCKERFILE_PATH} ."
+                        sh "docker build --build-arg PYTHON_BASE_IMAGE=python:${PYTHON_VERSION}-alpine --no-cache -t custom_image -f ${DOCKERFILE_PATH} ."
                         sh "docker tag custom_image ${DOCKERHUB_REPO}:${CUSTOM_TAG}"
                         withCredentials([usernamePassword(credentialsId: "dockerhub_id", usernameVariable: "USERNAME", passwordVariable: "PASSWORD")]) {
                             sh "docker login --username $USERNAME --password $PASSWORD"

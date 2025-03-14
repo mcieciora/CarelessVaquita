@@ -1,4 +1,6 @@
-FROM python:3.13-alpine
+ARG PYTHON_BASE_IMAGE=python
+
+FROM $PYTHON_BASE_IMAGE
 
 WORKDIR /app
 
