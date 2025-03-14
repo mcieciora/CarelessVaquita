@@ -1,6 +1,6 @@
 pipelineJob("NightlyTestPipeline_INPUT.PROJECT_NAME") {
     parameters {
-        stringParam("SCRIPT_BRANCH", "develop", "Execution branch.")
+        stringParam("SCRIPT_BRANCH", "develop", "Pipeline script branch.")
     }
     triggers {
         cron("H 21 * * *")

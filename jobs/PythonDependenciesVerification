@@ -1,5 +1,6 @@
 pipelineJob("PythonDependenciesVerification_INPUT.PROJECT_NAME") {
     parameters {
+        stringParam("SCRIPT_BRANCH", "develop", "Pipeline script branch.")
         stringParam("BRANCH", "develop", "Execution branch.")
     }
     definition {
@@ -9,7 +10,7 @@ pipelineJob("PythonDependenciesVerification_INPUT.PROJECT_NAME") {
                     remote {
                         url("INPUT.PROJECT_URL")
                     }
-                    branch("*/develop")
+                    branch('*/${SCRIPT_BRANCH}')
                 }
             }
             scriptPath("tools/jenkins/PythonDependenciesVerificationJenkinsfile")
