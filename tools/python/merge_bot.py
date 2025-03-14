@@ -4,6 +4,7 @@ from argparse import ArgumentParser
 from github import Auth, Github
 from github.GithubException import UnknownObjectException
 
+print("test")
 
 class MergeBot:
     """Merge Bot class."""

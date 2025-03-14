@@ -1,7 +1,7 @@
 GITHUB_REPO=CarelessVaquita
 REPO_URL=git@github.com:mcieciora/CarelessVaquita.git
 DOCKERHUB_REPO=mcieciora/careless_vaquita
-DEFAULT_IMAGE_TAG=3.13.2-alpine
+DEFAULT_IMAGE_TAG=3.12-alpine
 HADOLINT_VERSION=v2.12.0-alpine
 SHELLCHECK_VERSION=v0.10.0
 TRIVY_VERSION=0.59.0
