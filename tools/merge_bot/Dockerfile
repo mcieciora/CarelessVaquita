@@ -2,8 +2,6 @@ ARG DEFAULT_IMAGE_TAG=3.9
 
 FROM python:${DEFAULT_IMAGE_TAG}
 
-RUN echo ""
-
 WORKDIR /app
 
 COPY requirements/merge_bot/requirements.txt /app
