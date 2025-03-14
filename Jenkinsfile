@@ -31,6 +31,8 @@ pipeline {
                     currentBuild.description = "Branch: ${BRANCH_TO_USE}\nFlag: ${FLAG}\nGroups: ${TEST_GROUPS}"
                     build_test_image = sh(script: "git diff --name-only \$(git rev-parse HEAD) \$(git rev-parse origin/${BRANCH_REV}) | grep -e automated_tests -e src -e requirements -e tools/python",
                                           returnStatus: true)
+                    build_merge_bot_image = sh(script: "git diff --name-only \$(git rev-parse HEAD) \$(git rev-parse origin/${BRANCH_REV}) | grep -e required_reviewers -e src -e requirements/merge_bot -e tools/python/merge_bot.py -e tools/merge_bot/Dockerfile",
+                                          returnStatus: true)
                 }
             }
         }
@@ -49,6 +51,28 @@ pipeline {
                                 sh "docker build --build-arg DEFAULT_IMAGE_TAG=${DEFAULT_IMAGE_TAG} --no-cache -t test_image -f automated_tests/Dockerfile ."
                                 if (BRANCH_TO_USE == "master" || BRANCH_TO_USE == "develop") {
                                     sh "docker tag test_image ${DOCKERHUB_REPO}:test_image"
+                                    withCredentials([usernamePassword(credentialsId: "dockerhub_id", usernameVariable: "USERNAME", passwordVariable: "PASSWORD")]) {
+                                        sh "docker login --username $USERNAME --password $PASSWORD"
+                                        sh "docker push ${DOCKERHUB_REPO}:test_image"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                stage ("Build merge bot image") {
+                    when {
+                        anyOf {
+                            expression {build_merge_bot_image == 0}
+                            expression {FORCE_DOCKER_IMAGE_BUILD.toBoolean() == true}
+                        }
+                    }
+                    steps {
+                        script {
+                            withEnv(getToolsConfig()) {
+                                sh "docker build --build-arg DEFAULT_IMAGE_TAG=${DEFAULT_IMAGE_TAG} --no-cache -t merge_bot_image -f tools/merge_bot/Dockerfile ."
+                                if (BRANCH_TO_USE == "master" || BRANCH_TO_USE == "develop") {
+                                    sh "docker tag merge_bot_image ${DOCKERHUB_REPO}:merge_bot"
                                     withCredentials([usernamePassword(credentialsId: "dockerhub_id", usernameVariable: "USERNAME", passwordVariable: "PASSWORD")]) {
                                         sh "docker login --username $USERNAME --password $PASSWORD"
                                         sh "docker push ${DOCKERHUB_REPO}:test_image"
