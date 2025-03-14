@@ -24,7 +24,6 @@ def check_for_outdated_packages():
             "latest_version": outdated_dependency["latest_version"]
         }
 
-
     for req_file in glob("./requirements/**/requirements.txt"):
         with open(req_file, mode="r", encoding="utf-8") as req:
             all_file_reqs = [r for r in req.readlines()]
