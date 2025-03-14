@@ -41,7 +41,7 @@ pipelineJob("MergeBot_INPUT.PROJECT_NAME/MergeBot_INPUT.PROJECT_NAME") {
                     remote {
                         url("INPUT.PROJECT_URL")
                     }
-                    branch("*/develop")
+                    branch('*/${SCRIPT_BRANCH}')
                 }
             }
             scriptPath("tools/merge_bot/MergeBotJenkinsfile")

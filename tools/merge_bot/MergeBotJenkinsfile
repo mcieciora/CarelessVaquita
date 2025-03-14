@@ -32,9 +32,11 @@ pipeline {
                     withCredentials([file(credentialsId: "cv_credentials", variable: "cv_credentials_file")]) {
                         sh "cp $cv_credentials_file .credentials"
                     }
-                    return_value = sh(script: "docker run --rm --env-file .credentials merge_bot --merge", returnStdout: true).trim()
-                    if (!return_value.contains("merged successfully.")) {
-                        unstable(return_value)
+                    withEnv(getToolsConfig()) {
+                        return_value = sh(script: "docker run --rm --env-file .tools_config --env-file .credentials merge_bot --merge", returnStdout: true).trim()
+                        if (!return_value.contains("merged successfully.")) {
+                            unstable(return_value)
+                        }
                     }
                 }
             }

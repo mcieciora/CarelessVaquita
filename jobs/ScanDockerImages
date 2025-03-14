@@ -9,7 +9,7 @@ pipelineJob("ScanDockerImages_INPUT.PROJECT_NAME") {
                     remote {
                         url("INPUT.PROJECT_URL")
                     }
-                    branch("*/develop")
+                    branch('*/${SCRIPT_BRANCH}')
                 }
             }
             scriptPath("tools/jenkins/ScanDockerImagesJenkinsfile")
