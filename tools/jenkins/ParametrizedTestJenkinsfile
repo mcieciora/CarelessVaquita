@@ -55,7 +55,7 @@ pipeline {
                     steps {
                         script {
                             withEnv(getToolsConfig()) {
-                                sh "docker build --build-arg PYTHON_BASE_IMAGE=python:${PYTHON_VERSION}-alpine --no-cache -t test_image -f automated_tests/Dockerfile ."
+                                sh "docker build --build-arg DEFAULT_IMAGE_TAG=${DEFAULT_IMAGE_TAG} --no-cache -t test_image -f automated_tests/Dockerfile ."
                                 if (BRANCH_TO_USE == "master" || BRANCH_TO_USE == "develop") {
                                     sh "docker tag test_image ${DOCKERHUB_REPO}:test_image"
                                     withCredentials([usernamePassword(credentialsId: "dockerhub_id", usernameVariable: "USERNAME", passwordVariable: "PASSWORD")]) {
@@ -282,7 +282,7 @@ pipeline {
                     steps {
                         script {
                             docker.withRegistry("", "dockerhub_id") {
-                                sh "docker build --build-arg PYTHON_BASE_IMAGE=python:${PYTHON_VERSION}-alpine --no-cache -t custom_image ."
+                                sh "docker build --build-arg PYTHON_BASE_IMAGE=python:${DEFAULT_IMAGE_TAG} --no-cache -t custom_image ."
                                 sh "docker tag custom_image ${DOCKERHUB_REPO}:${BRANCH_TO_USE}-${curDate}"
                                 withCredentials([usernamePassword(credentialsId: "dockerhub_id", usernameVariable: "USERNAME", passwordVariable: "PASSWORD")]) {
                                     sh "docker login --username $USERNAME --password $PASSWORD"
