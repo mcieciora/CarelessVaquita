@@ -44,11 +44,16 @@ pipeline {
             steps {
                 script {
                     return_value = sh(script: "docker run --name python_dependency_container test_image python tools/python/python_dependencies_up_to_date_verification.py", returnStdout: true).trim()
-                    sh "docker container cp python_dependency_container:/app/requirements ./"
-                    sh "docker rm python_dependency_container"
                     if (return_value.contains("WARNING:")) {
                         unstable(return_value)
                     }
+                }
+            }
+            post {
+                always {
+                    sh "docker container cp python_dependency_container:/app/requirements ./"
+                    sh "docker rm python_dependency_container"
+                    archiveArtifacts artifacts: "**/requirements.txt"
                 }
             }
         }
@@ -56,7 +61,6 @@ pipeline {
     post {
         always {
             script {
-                archiveArtifacts artifacts: "**/requirements.txt", followSymlinks: false
                 withEnv(getToolsConfig()) {
                     if (params.BRANCH == "develop" || params.BRANCH == "master") {
                         sh "docker rmi ${DOCKERHUB_REPO}:test_image"
