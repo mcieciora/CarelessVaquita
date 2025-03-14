@@ -14,7 +14,7 @@ pipeline {
         stage ("Checkout branch") {
             steps {
                 script {
-                    git branch: env.BRANCH, url: env.REPO_URL
+                    git branch: BRANCH, url: REPO_URL
                 }
             }
         }

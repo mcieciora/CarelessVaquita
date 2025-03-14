@@ -14,11 +14,11 @@ pipeline {
         stage ("Checkout branch") {
             steps {
                 script {
-                    withCredentials([sshUserPrivateKey(credentialsId: "agent_${env.NODE_NAME}", keyFileVariable: "key")]) {
+                    withCredentials([sshUserPrivateKey(credentialsId: "agent_${NODE_NAME}", keyFileVariable: "key")]) {
                         sh 'GIT_SSH_COMMAND="ssh -i $key"'
-                        git branch: params.BRANCH, url: env.REPO_URL
+                        git branch: params.BRANCH, url: REPO_URL
                     }
-                    currentBuild.description = "Branch: ${env.BRANCH}"
+                    currentBuild.description = "Branch: ${BRANCH}"
                 }
             }
         }

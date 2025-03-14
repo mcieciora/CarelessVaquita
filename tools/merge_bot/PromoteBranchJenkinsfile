@@ -24,7 +24,7 @@ pipeline {
                     withCredentials([file(credentialsId: "cv_dot_env", variable: "cv_env_file")]) {
                         sh "cp $cv_env_file .env"
                     }
-                    return_value = sh(script: "docker run --rm --env-file .env merge_bot --create --branch ${env.BRANCH} --base ${TARGET_BRANCH}", returnStdout: true).trim()
+                    return_value = sh(script: "docker run --rm --env-file .env merge_bot --create --branch ${BRANCH} --base ${TARGET_BRANCH}", returnStdout: true).trim()
                 }
             }
         }
