@@ -34,7 +34,7 @@ def check_for_outdated_packages():
                 suggested_version = current_version
                 if name in outdated_dependencies and current_version != outdated_dependencies[name]["version"]:
                     print(f"WARNING: Version of {name} declared in requirements file ({current_version}) is "
-                          f"different than the one installed {outdated_dependencies[name]["version"]}")
+                          f"different than the one installed {outdated_dependencies[name]['version']}")
                 if name in outdated_dependencies and current_version != outdated_dependencies[name]["latest_version"]:
                     print(
                         f"WARNING: {name} is outdated. Consider upgrading from {current_version} to "
