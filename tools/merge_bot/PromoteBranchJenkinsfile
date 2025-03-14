@@ -1,34 +1,40 @@
 pipeline {
     agent {
-        label 'executor'
+        label "executor"
     }
     parameters {
         string(name: "BRANCH", defaultValue: "", description: "Branch to promote pull request from.")
         string(name: "TARGET_BRANCH", defaultValue: "develop", description: "Branch to merge source branch to.")
     }
-    environment {
-        REPO_URL = "git@github.com:mcieciora/CarelessVaquita.git"
-        DOCKERHUB_REPO = "mcieciora/careless_vaquita"
-    }
     options {
         skipDefaultCheckout()
     }
     stages {
+        stage ("Get tools config") {
+            steps {
+                script {
+                    println("${BRANCH}")
+                    sh "curl -OL https://raw.githubusercontent.com/mcieciora/CarelessVaquita/refs/heads/${BRANCH}/.tools_config"
+                }
+            }
+        }
         stage ("Pull merge bot image") {
             steps {
                 script {
-                    sh "docker pull ${DOCKERHUB_REPO}:merge_bot"
-                    sh "docker tag ${DOCKERHUB_REPO}:merge_bot merge_bot"
+                    withEnv(getToolsConfig()) {
+                        sh "docker pull ${DOCKERHUB_REPO}:merge_bot"
+                        sh "docker tag ${DOCKERHUB_REPO}:merge_bot merge_bot"
+                    }
                 }
             }
         }
         stage("Promote branch") {
             steps {
                 script {
-                    withCredentials([file(credentialsId: 'cv_dot_env', variable: 'cv_env_file')]) {
-                        sh 'cp $cv_env_file .env'
+                    withCredentials([file(credentialsId: "cv_credentials", variable: "cv_credentials_file")]) {
+                        sh "cp $cv_credentials_file .credentials"
                     }
-                    return_value = sh(script: "docker run --rm --env-file .env merge_bot --create --branch ${env.BRANCH} --base ${TARGET_BRANCH}", returnStdout: true).trim()
+                    return_value = sh(script: "docker run --rm --env-file .tools_config --env-file .credentials merge_bot --create --branch ${BRANCH} --base ${TARGET_BRANCH}", returnStdout: true).trim()
                 }
             }
         }
@@ -36,9 +42,15 @@ pipeline {
     post {
         always {
             script {
-                sh "docker rmi ${DOCKERHUB_REPO}:merge_bot"
+                withEnv(getToolsConfig()) {
+                    sh "docker rmi ${DOCKERHUB_REPO}:merge_bot"
+                }
                 cleanWs()
             }
         }
     }
+}
+
+def getToolsConfig() {
+    return readFile(".tools_config").split("\n") as List
 }

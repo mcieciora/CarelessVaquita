@@ -1,4 +1,6 @@
-FROM python:3.13.2-alpine
+ARG DEFAULT_IMAGE_TAG=3.9
+
+FROM python:${DEFAULT_IMAGE_TAG}
 
 WORKDIR /app
 

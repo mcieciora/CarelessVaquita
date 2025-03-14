@@ -1,24 +1,28 @@
 pipeline {
     agent {
-        label 'master'
+        label "master"
     }
     triggers {
         cron("H 21 * * *")
-    }
-    environment {
-        DEFAULT_NIGHTLY_FLAG = 'unittest'
     }
     options {
         skipDefaultCheckout()
     }
     stages {
+        stage ("Get tools config") {
+            steps {
+                script {
+                    sh "curl -OL https://raw.githubusercontent.com/mcieciora/CarelessVaquita/refs/heads/${SCRIPT_BRANCH}/.tools_config"
+                }
+            }
+        }
         stage ("Python verification") {
             steps {
                 script {
-                    def build = build job: 'PythonDependenciesVerification_CarelessVaquita',
+                    def build = build job: "PythonDependenciesVerification_CarelessVaquita",
                     propagate: false
-                    if (build.result != 'SUCCESS') {
-                        unstable('Stage reported as unstable')
+                    if (build.result != "SUCCESS") {
+                        unstable("Stage reported as unstable")
                     }
                 }
             }
@@ -26,10 +30,10 @@ pipeline {
         stage ("Scan docker images") {
             steps {
                 script {
-                    def build = build job: 'ScanDockerImages_CarelessVaquita',
+                    def build = build job: "ScanDockerImages_CarelessVaquita",
                     propagate: false
-                        if (build.result != 'SUCCESS') {
-                            unstable('Stage reported as unstable')
+                        if (build.result != "SUCCESS") {
+                            unstable("Stage reported as unstable")
                         }
                     }
             }
@@ -39,24 +43,28 @@ pipeline {
                 stage ("develop") {
                     steps {
                         script {
-                            def build = build job: 'ParametrizedTestPipeline_CarelessVaquita',
-                            parameters: [
-                                string(name: 'FLAG', value: DEFAULT_NIGHTLY_FLAG),
-                                string(name: 'BRANCH', value: 'develop'),
-                                booleanParam(name: 'IS_NIGHTLY', value: true)
-                            ]
+                            withEnv(getToolsConfig()) {
+                                def build = build job: "ParametrizedTestPipeline_CarelessVaquita",
+                                parameters: [
+                                    string(name: "FLAG", value: "${DEFAULT_NIGHTLY_FLAG}"),
+                                    string(name: "BRANCH", value: "develop"),
+                                    booleanParam(name: "IS_NIGHTLY", value: true)
+                                ]
+                            }
                         }
                     }
                 }
                 stage ("master") {
                     steps {
                         script {
-                            def build = build job: 'ParametrizedTestPipeline_CarelessVaquita',
-                            parameters: [
-                                string(name: 'FLAG', value: DEFAULT_NIGHTLY_FLAG),
-                                string(name: 'BRANCH', value: 'master'),
-                                booleanParam(name: 'IS_NIGHTLY', value: true)
-                            ]
+                            withEnv(getToolsConfig()) {
+                                def build = build job: "ParametrizedTestPipeline_CarelessVaquita",
+                                parameters: [
+                                    string(name: "FLAG", value: "${DEFAULT_NIGHTLY_FLAG}"),
+                                    string(name: "BRANCH", value: "master"),
+                                    booleanParam(name: "IS_NIGHTLY", value: true)
+                                ]
+                            }
                         }
                     }
                 }
@@ -68,4 +76,8 @@ pipeline {
             cleanWs()
         }
     }
+}
+
+def getToolsConfig() {
+    return readFile(".tools_config").split("\n") as List
 }
