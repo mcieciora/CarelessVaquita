@@ -1,0 +1,73 @@
+def customImage
+
+pipeline {
+    agent {
+        label "executor"
+    }
+    triggers {
+        cron("H 23 * * *")
+    }
+    parameters {
+        string(name: "SCRIPT_BRANCH", defaultValue: "develop", description: "Execution branch.")
+    }
+    options {
+        skipDefaultCheckout()
+    }
+    stages {
+        stage ("Checkout branch") {
+            steps {
+                script {
+                    sh "curl -OL https://raw.githubusercontent.com/mcieciora/CarelessVaquita/refs/heads/${SCRIPT_BRANCH}/.tools_config"
+                    withEnv(getToolsConfig()) {
+                        withCredentials([sshUserPrivateKey(credentialsId: "agent_${NODE_NAME}", keyFileVariable: "key")]) {
+                            sh 'GIT_SSH_COMMAND="ssh -i $key"'
+                            git branch: params.BRANCH, url: REPO_URL
+                        }
+                    }
+                    currentBuild.description = "Branch: ${BRANCH}"
+                }
+            }
+        }
+        stage ("Prepare test image") {
+            steps {
+                script {
+                    withEnv(getToolsConfig()) {
+                        if (params.BRANCH == "develop" || params.BRANCH == "master") {
+                            sh "docker pull ${DOCKERHUB_REPO}:test_image"
+                            sh "docker tag ${DOCKERHUB_REPO}:test_image test_image"
+                        }
+                        else {
+                            sh "docker build --build-arg PYTHON_BASE_IMAGE=python:${DEFAULT_IMAGE_TAG} --no-cache -t test_image -f automated_tests/Dockerfile ."
+                        }
+                    }
+                }
+            }
+        }
+        stage("CleanUp Dockerhub images") {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: "dockerhub_id", usernameVariable: "USERNAME", passwordVariable: "PASSWORD")]) {
+                        sh "chmod +x tools/shell_scripts/delete_old_dockerhub_tags.sh"
+                        withEnv(getToolsConfig()) {
+                            return_value = sh(script: "tools/shell_scripts/delete_old_dockerhub_tags.sh", returnStdout: true).trim()
+                        }
+                        if (return_value.contains("Could not delete tag")) {
+                            unstable(return_value)
+                        }
+                    }
+                }
+            }
+        }
+    }
+    post {
+        always {
+            script {
+                cleanWs()
+            }
+        }
+    }
+}
+
+def getToolsConfig() {
+    return readFile(".tools_config").split("\n") as List
+}
