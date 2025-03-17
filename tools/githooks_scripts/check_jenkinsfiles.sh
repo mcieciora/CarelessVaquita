@@ -1,6 +1,7 @@
 #!/bin/bash
 
-source .env
+# shellcheck source=/dev/null
+source .credentials
 
 JENKINS_FILE_CHECK_FILE=$(mktemp XXXXX)
 find . -name "*Jenkinsfile" > "$JENKINS_FILE_CHECK_FILE"

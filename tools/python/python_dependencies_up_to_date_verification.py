@@ -14,20 +14,37 @@ def check_for_outdated_packages():
 
     :return: None
     """
-    dependencies_list = []
-    for req_file in glob("./requirements/**/requirements.txt"):
-        with open(req_file, mode="r", encoding="utf-8") as req:
-            format_dependency_list = [r.split("=")[0] for r in req.readlines()]
-            dependencies_list.extend(format_dependency_list)
-    outdated_dependencies = subprocess.check_output(
+    outdated_dependencies_process_output = subprocess.check_output(
         [executable, "-m", "pip", "list", "-o", "--format", "json"]
     )
-    for listed_req in loads(outdated_dependencies):
-        if listed_req["name"] in dependencies_list:
-            print(
-                f"{listed_req['name']} is outdated. Consider upgrading from {listed_req['version']} to "
-                f"{listed_req['latest_version']}"
-            )
+    outdated_dependencies = {}
+    for outdated_dependency in loads(outdated_dependencies_process_output):
+        outdated_dependencies[outdated_dependency["name"]] = {
+            "version": outdated_dependency["version"],
+            "latest_version": outdated_dependency["latest_version"]
+        }
+
+    for req_file in glob("./requirements/**/requirements.txt"):
+        with open(req_file, mode="r", encoding="utf-8") as req:
+            all_file_reqs = [r for r in req.readlines()]
+            output_req_file = []
+            for dependency in all_file_reqs:
+                name, current_version = dependency.replace("\n", "").split("==")
+
+                suggested_version = current_version
+                if name in outdated_dependencies and current_version != outdated_dependencies[name]["version"]:
+                    print(f"WARNING: Version of {name} declared in requirements file ({current_version}) is "
+                          f"different than the one installed {outdated_dependencies[name]['version']}")
+                if name in outdated_dependencies and current_version != outdated_dependencies[name]["latest_version"]:
+                    print(
+                        f"WARNING: {name} is outdated. Consider upgrading from {current_version} to "
+                        f"{outdated_dependencies[name]['latest_version']}"
+                    )
+                    suggested_version = outdated_dependencies[name]['latest_version']
+                output_req_file.append(f"{name}=={suggested_version}\n")
+
+        with open(req_file, mode="w", encoding="utf-8") as req:
+            req.writelines(output_req_file)
 
 
 if __name__ == "__main__":

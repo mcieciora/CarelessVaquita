@@ -1,9 +1,9 @@
-pipelineJob("NightlyTestPipeline_INPUT.PROJECT_NAME") {
+pipelineJob("DockerhubImageCleanUp_INPUT.PROJECT_NAME") {
     parameters {
         stringParam("SCRIPT_BRANCH", "develop", "Pipeline script branch.")
     }
     triggers {
-        cron("H 21 * * *")
+        cron("H 23 * * *")
     }
     definition {
         cpsScm {
@@ -15,7 +15,7 @@ pipelineJob("NightlyTestPipeline_INPUT.PROJECT_NAME") {
                     branch('*/${SCRIPT_BRANCH}')
                 }
             }
-            scriptPath("tools/jenkins/NightlyTestJenkinsfile")
+            scriptPath("tools/jenkins/DockerhubImageCleanUpJenkinsfile")
             lightweight()
         }
     }

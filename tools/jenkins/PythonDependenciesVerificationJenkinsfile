@@ -2,14 +2,10 @@ def customImage
 
 pipeline {
     agent {
-        label 'executor'
+        label "executor"
     }
     parameters {
         string(name: "BRANCH", defaultValue: "develop", description: "Execution branch.")
-    }
-    environment {
-        REPO_URL = "git@github.com:mcieciora/CarelessVaquita.git"
-        DOCKERHUB_REPO = "mcieciora/careless_vaquita"
     }
     options {
         skipDefaultCheckout()
@@ -18,23 +14,28 @@ pipeline {
         stage ("Checkout branch") {
             steps {
                 script {
-                    withCredentials([sshUserPrivateKey(credentialsId: "agent_${env.NODE_NAME}", keyFileVariable: "key")]) {
-                        sh 'GIT_SSH_COMMAND="ssh -i $key"'
-                        git branch: params.BRANCH, url: env.REPO_URL
+                    sh "curl -OL https://raw.githubusercontent.com/mcieciora/CarelessVaquita/refs/heads/${BRANCH}/.tools_config"
+                    withEnv(getToolsConfig()) {
+                        withCredentials([sshUserPrivateKey(credentialsId: "agent_${NODE_NAME}", keyFileVariable: "key")]) {
+                            sh 'GIT_SSH_COMMAND="ssh -i $key"'
+                            git branch: params.BRANCH, url: REPO_URL
+                        }
                     }
-                    currentBuild.description = "Branch: ${env.BRANCH}"
+                    currentBuild.description = "Branch: ${BRANCH}"
                 }
             }
         }
         stage ("Prepare test image") {
             steps {
                 script {
-                    if (params.BRANCH == "develop" || params.BRANCH == "master") {
-                        sh "docker pull ${DOCKERHUB_REPO}:test_image"
-                        sh "docker tag ${DOCKERHUB_REPO}:test_image test_image"
-                    }
-                    else {
-                        sh "docker build --no-cache -t test_image -f automated_tests/Dockerfile ."
+                    withEnv(getToolsConfig()) {
+                        if (params.BRANCH == "develop" || params.BRANCH == "master") {
+                            sh "docker pull ${DOCKERHUB_REPO}:test_image"
+                            sh "docker tag ${DOCKERHUB_REPO}:test_image test_image"
+                        }
+                        else {
+                            sh "docker build --build-arg PYTHON_BASE_IMAGE=python:${DEFAULT_IMAGE_TAG} --no-cache -t test_image -f automated_tests/Dockerfile ."
+                        }
                     }
                 }
             }
@@ -42,10 +43,17 @@ pipeline {
         stage("Verify dependencies") {
             steps {
                 script {
-                    return_value = sh(script: "docker run --rm test_image python tools/python/python_dependencies_up_to_date_verification.py", returnStdout: true).trim()
-                    if (return_value.contains("Consider upgrading")) {
+                    return_value = sh(script: "docker run --name python_dependency_container test_image python tools/python/python_dependencies_up_to_date_verification.py", returnStdout: true).trim()
+                    if (return_value.contains("WARNING:")) {
                         unstable(return_value)
                     }
+                }
+            }
+            post {
+                always {
+                    sh "docker container cp python_dependency_container:/app/requirements ./"
+                    sh "docker rm python_dependency_container"
+                    archiveArtifacts artifacts: "**/requirements.txt"
                 }
             }
         }
@@ -53,14 +61,20 @@ pipeline {
     post {
         always {
             script {
-                if (params.BRANCH == "develop" || params.BRANCH == "master") {
-                    sh "docker rmi ${DOCKERHUB_REPO}:test_image"
-                }
-                else {
-                    sh "docker rmi test_image"
+                withEnv(getToolsConfig()) {
+                    if (params.BRANCH == "develop" || params.BRANCH == "master") {
+                        sh "docker rmi ${DOCKERHUB_REPO}:test_image"
+                    }
+                    else {
+                        sh "docker rmi test_image"
+                    }
                 }
                 cleanWs()
             }
         }
     }
+}
+
+def getToolsConfig() {
+    return readFile(".tools_config").split("\n") as List
 }

@@ -5,6 +5,7 @@ folder("MergeBot_INPUT.PROJECT_NAME") {
 
 pipelineJob("MergeBot_INPUT.PROJECT_NAME/PromoteBranch_INPUT.PROJECT_NAME") {
     parameters {
+        stringParam("SCRIPT_BRANCH", "develop", "Pipeline script branch.")
         stringParam("BRANCH", "", "Branch to promote pull request from.")
         stringParam("TARGET_BRANCH", "develop", "Branch to merge source branch to.")
     }
@@ -15,7 +16,7 @@ pipelineJob("MergeBot_INPUT.PROJECT_NAME/PromoteBranch_INPUT.PROJECT_NAME") {
                     remote {
                         url("INPUT.PROJECT_URL")
                     }
-                    branch("*/develop")
+                    branch('*/${SCRIPT_BRANCH}')
                 }
             }
             scriptPath("tools/merge_bot/PromoteBranchJenkinsfile")
@@ -28,6 +29,9 @@ pipelineJob("MergeBot_INPUT.PROJECT_NAME/PromoteBranch_INPUT.PROJECT_NAME") {
 }
 
 pipelineJob("MergeBot_INPUT.PROJECT_NAME/MergeBot_INPUT.PROJECT_NAME") {
+    parameters {
+        stringParam("SCRIPT_BRANCH", "develop", "Pipeline script branch.")
+    }
     triggers {
         cron("H/15 * * * *")
     }
@@ -38,7 +42,7 @@ pipelineJob("MergeBot_INPUT.PROJECT_NAME/MergeBot_INPUT.PROJECT_NAME") {
                     remote {
                         url("INPUT.PROJECT_URL")
                     }
-                    branch("*/develop")
+                    branch('*/${SCRIPT_BRANCH}')
                 }
             }
             scriptPath("tools/merge_bot/MergeBotJenkinsfile")
