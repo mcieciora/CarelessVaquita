@@ -1,0 +1,25 @@
+pipelineJob("DockerhubImageCleanUp_INPUT.PROJECT_NAME") {
+    parameters {
+        stringParam("SCRIPT_BRANCH", "develop", "Pipeline script branch.")
+    }
+    triggers {
+        cron("H 23 * * *")
+    }
+    definition {
+        cpsScm {
+            scm {
+                git {
+                    remote {
+                        url("INPUT.PROJECT_URL")
+                    }
+                    branch('*/${SCRIPT_BRANCH}')
+                }
+            }
+            scriptPath("tools/jenkins/DockerhubImageCleanUpJenkinsfile")
+            lightweight()
+        }
+    }
+    logRotator {
+        daysToKeep(7)
+    }
+}
