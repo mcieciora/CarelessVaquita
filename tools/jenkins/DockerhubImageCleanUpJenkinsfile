@@ -24,7 +24,6 @@ pipeline {
                             git branch: params.SCRIPT_BRANCH, url: REPO_URL
                         }
                     }
-                    currentBuild.description = "Branch: ${SCRIPT_BRANCH}"
                 }
             }
         }
