@@ -298,21 +298,24 @@ pipeline {
             parallel {
                 stage ("Push docker image") {
                     when {
-                        expression {
-                            return BRANCH_TO_USE == "master" || BRANCH_TO_USE == "develop" && IS_NIGHTLY == false
+                        allOf {
+                            expression {BRANCH_TO_USE == "master" || BRANCH_TO_USE == "develop"}
+                            expression {IS_NIGHTLY.toBoolean() == false}
                         }
                     }
                     steps {
                         script {
                             docker.withRegistry("", "dockerhub_id") {
-                                sh "docker build --build-arg PYTHON_BASE_IMAGE=python:${DEFAULT_IMAGE_TAG} --no-cache -t custom_image ."
-                                sh "docker tag custom_image ${DOCKERHUB_REPO}:${BRANCH_TO_USE}-${curDate}"
-                                withCredentials([usernamePassword(credentialsId: "dockerhub_id", usernameVariable: "USERNAME", passwordVariable: "PASSWORD")]) {
-                                    sh "docker login --username $USERNAME --password $PASSWORD"
-                                    sh "docker push ${DOCKERHUB_REPO}:${BRANCH_TO_USE}-${curDate}"
-                                    if (BRANCH_TO_USE == "master") {
-                                        sh "docker tag custom_image ${DOCKERHUB_REPO}:latest"
-                                        sh "docker push ${DOCKERHUB_REPO}:latest"
+                                withEnv(getToolsConfig()) {
+                                    sh "docker build --build-arg PYTHON_BASE_IMAGE=python:${DEFAULT_IMAGE_TAG} --no-cache -t custom_image ."
+                                    sh "docker tag custom_image ${DOCKERHUB_REPO}:${BRANCH_TO_USE}-${curDate}"
+                                    withCredentials([usernamePassword(credentialsId: "dockerhub_id", usernameVariable: "USERNAME", passwordVariable: "PASSWORD")]) {
+                                        sh "docker login --username $USERNAME --password $PASSWORD"
+                                        sh "docker push ${DOCKERHUB_REPO}:${BRANCH_TO_USE}-${curDate}"
+                                        if (BRANCH_TO_USE == "master") {
+                                            sh "docker tag custom_image ${DOCKERHUB_REPO}:latest"
+                                            sh "docker push ${DOCKERHUB_REPO}:latest"
+                                        }
                                     }
                                 }
                             }
@@ -321,8 +324,9 @@ pipeline {
                 }
                 stage ("Push tag") {
                     when {
-                        expression {
-                            return BRANCH_TO_USE == "master" && IS_NIGHTLY == false
+                        allOf {
+                            expression {BRANCH_TO_USE == "master"}
+                            expression {IS_NIGHTLY.toBoolean() == false}
                         }
                     }
                     steps {
