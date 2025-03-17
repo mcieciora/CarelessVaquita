@@ -21,10 +21,10 @@ pipeline {
                     withEnv(getToolsConfig()) {
                         withCredentials([sshUserPrivateKey(credentialsId: "agent_${NODE_NAME}", keyFileVariable: "key")]) {
                             sh 'GIT_SSH_COMMAND="ssh -i $key"'
-                            git branch: params.BRANCH, url: REPO_URL
+                            git branch: params.SCRIPT_BRANCH, url: REPO_URL
                         }
                     }
-                    currentBuild.description = "Branch: ${BRANCH}"
+                    currentBuild.description = "Branch: ${SCRIPT_BRANCH}"
                 }
             }
         }
