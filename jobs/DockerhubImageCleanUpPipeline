@@ -1,4 +1,4 @@
-pipelineJob("PythonDependenciesVerification_INPUT.PROJECT_NAME") {
+pipelineJob("DockerhubImageCleanUp_INPUT.PROJECT_NAME") {
     parameters {
         stringParam("SCRIPT_BRANCH", "develop", "Pipeline script branch.")
     }

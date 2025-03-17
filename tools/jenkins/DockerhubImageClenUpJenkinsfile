@@ -28,21 +28,6 @@ pipeline {
                 }
             }
         }
-        stage ("Prepare test image") {
-            steps {
-                script {
-                    withEnv(getToolsConfig()) {
-                        if (params.BRANCH == "develop" || params.BRANCH == "master") {
-                            sh "docker pull ${DOCKERHUB_REPO}:test_image"
-                            sh "docker tag ${DOCKERHUB_REPO}:test_image test_image"
-                        }
-                        else {
-                            sh "docker build --build-arg PYTHON_BASE_IMAGE=python:${DEFAULT_IMAGE_TAG} --no-cache -t test_image -f automated_tests/Dockerfile ."
-                        }
-                    }
-                }
-            }
-        }
         stage("CleanUp Dockerhub images") {
             steps {
                 script {
