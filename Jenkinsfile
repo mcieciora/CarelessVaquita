@@ -200,6 +200,17 @@ pipeline {
                         }
                     }
                 }
+                stage ("Scan for tests number") {
+                    steps {
+                        script {
+                            in_docker_value = sh(script: "docker run --rm test_image python -m pytest --collect-only | grep -c '<Function'", returnStdout: true)
+                            in_workdir_value = sh(script: "python3 -m pytest --collect-only | grep -c '<Function'", returnStdout: true)
+                            if (in_docker_value.toInteger() != in_workdir_value.toInteger()) {
+                                unstable("Stage reported as unstable")
+                            }
+                        }
+                    }
+                }
                 stage ("Lint Dockerfiles") {
                     steps {
                         script {
