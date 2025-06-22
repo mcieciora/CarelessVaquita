@@ -55,7 +55,7 @@ class MergeBot:
                                        "Proceeding with next pull request.", pull_request)
                         continue
                     logger.info("#%s merged successfully, "
-                                "but experienced difficulties with branch deletion.",pull_request)
+                                "but experienced difficulties with branch deletion.", pull_request)
                     break
             logger.info("Pull request #%s status is %s.", pull_request.number, pull_request.mergeable_state)
 
