@@ -19,7 +19,7 @@ def scan_for_skipped_tests():
             pattern = "@mark.skip"
             if pattern in file_content:
                 skipped_tests_dict[python_file] = file_content.count(pattern)
-                logger.error(f"%s skip mark(s) found in: %s", file_content.count(pattern), python_file)
+                logger.error("%s skip mark(s) found in: %s", file_content.count(pattern), python_file)
     if skipped_tests_dict.keys():
         exit(1)
 

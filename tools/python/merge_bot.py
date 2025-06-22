@@ -51,13 +51,13 @@ class MergeBot:
                 except UnknownObjectException:
                     active_pulls = self.github.get_user(self.username).get_repo(self.repository).get_pulls()
                     if pull_request in active_pulls:
-                        logger.warning(f"#%s could not be merged automatically. "
-                                       f"Proceeding with next pull request.", pull_request)
+                        logger.warning("#%s could not be merged automatically. "
+                                       "Proceeding with next pull request.", pull_request)
                         continue
-                    logger.info(f"#%s merged successfully, "
-                                f"but experienced difficulties with branch deletion.",pull_request)
+                    logger.info("#%s merged successfully, "
+                                "but experienced difficulties with branch deletion.",pull_request)
                     break
-            logger.info(f"Pull request #%s status is %s.", pull_request.number, pull_request.mergeable_state)
+            logger.info("Pull request #%s status is %s.", pull_request.number, pull_request.mergeable_state)
 
     @staticmethod
     def _update_reviewers(pull_request):

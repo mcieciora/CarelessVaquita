@@ -37,12 +37,12 @@ def check_for_outdated_packages():
 
                 suggested_version = current_version
                 if name in outdated_dependencies and current_version != outdated_dependencies[name]["version"]:
-                    logger.info(f"WARNING: Version of %s declared in requirements file (%s) is "
-                                f"different than the one installed %s", name, current_version,
+                    logger.info("WARNING: Version of %s declared in requirements file (%s) is "
+                                "different than the one installed %s", name, current_version,
                                 outdated_dependencies[name]["version"])
                 if name in outdated_dependencies and current_version != outdated_dependencies[name]["latest_version"]:
                     logger.info(
-                        f"WARNING: %s is outdated. Consider upgrading from %s to %s", name, current_version,
+                        "WARNING: %s is outdated. Consider upgrading from %s to %s", name, current_version,
                         outdated_dependencies[name]["latest_version"])
                     suggested_version = outdated_dependencies[name]['latest_version']
                 output_req_file.append(f"{name}=={suggested_version}\n")
