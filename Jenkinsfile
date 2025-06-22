@@ -201,6 +201,12 @@ pipeline {
                     }
                 }
                 stage ("Test environment check") {
+                    when {
+                        allOf {
+                            expression {build_test_image == 1}
+                            expression {FORCE_DOCKER_IMAGE_BUILD.toBoolean() == false}
+                        }
+                    }
                     steps {
                         script {
                             sh(script: "docker run --rm test_image python -m pytest --collect-only >> in_docker_log.txt")
