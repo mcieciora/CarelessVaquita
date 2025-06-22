@@ -1,7 +1,11 @@
 from sys import executable  # pylint: disable=redefined-builtin
 from glob import glob
-import subprocess
+from subprocess import check_output
 from json import loads
+from logging import getLogger
+
+
+logger = getLogger(__name__)
 
 
 def check_for_outdated_packages():
@@ -14,7 +18,7 @@ def check_for_outdated_packages():
 
     :return: None
     """
-    outdated_dependencies_process_output = subprocess.check_output(
+    outdated_dependencies_process_output = check_output(
         [executable, "-m", "pip", "list", "-o", "--format", "json"]
     )
     outdated_dependencies = {}
@@ -33,13 +37,13 @@ def check_for_outdated_packages():
 
                 suggested_version = current_version
                 if name in outdated_dependencies and current_version != outdated_dependencies[name]["version"]:
-                    print(f"WARNING: Version of {name} declared in requirements file ({current_version}) is "
-                          f"different than the one installed {outdated_dependencies[name]['version']}")
+                    logger.info("WARNING: Version of %s declared in requirements file (%s) is "
+                                "different than the one installed %s", name, current_version,
+                                outdated_dependencies[name]["version"])
                 if name in outdated_dependencies and current_version != outdated_dependencies[name]["latest_version"]:
-                    print(
-                        f"WARNING: {name} is outdated. Consider upgrading from {current_version} to "
-                        f"{outdated_dependencies[name]['latest_version']}"
-                    )
+                    logger.info(
+                        "WARNING: %s is outdated. Consider upgrading from %s to %s", name, current_version,
+                        outdated_dependencies[name]["latest_version"])
                     suggested_version = outdated_dependencies[name]['latest_version']
                 output_req_file.append(f"{name}=={suggested_version}\n")
 

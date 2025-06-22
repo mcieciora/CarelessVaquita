@@ -1,5 +1,9 @@
 from sys import exit  # pylint: disable=redefined-builtin
 from glob import glob
+from logging import getLogger
+
+
+logger = getLogger(__name__)
 
 
 def scan_for_skipped_tests():
@@ -15,9 +19,7 @@ def scan_for_skipped_tests():
             pattern = "@mark.skip"
             if pattern in file_content:
                 skipped_tests_dict[python_file] = file_content.count(pattern)
-                print(
-                    f"[ERR] {file_content.count(pattern)} skip mark(s) found in: {python_file}"
-                )
+                logger.error("%s skip mark(s) found in: %s", file_content.count(pattern), python_file)
     if skipped_tests_dict.keys():
         exit(1)
 

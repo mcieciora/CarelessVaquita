@@ -1,8 +1,12 @@
 from os import environ
 from sys import argv
 from argparse import ArgumentParser
+from logging import getLogger
 from github import Auth, Github
 from github.GithubException import UnknownObjectException
+
+
+logger = getLogger(__name__)
 
 
 class MergeBot:
@@ -27,7 +31,7 @@ class MergeBot:
             body=f"Automatically created pull request that merges {branch_name} into {base_branch}."
         )
         self._update_reviewers(return_value)
-        print(f"Created pull request: #{return_value.number}")
+        logger.info("Created pull request: #%s", return_value.number)
 
     def merge_pull_request(self):
         """
@@ -37,22 +41,23 @@ class MergeBot:
         """
         active_pulls = self.github.get_user(self.username).get_repo(self.repository).get_pulls()
         if not list(active_pulls):
-            print("No active pull requests.")
+            logger.info("No active pull requests.")
         for pull_request in active_pulls:
             if pull_request.mergeable and pull_request.mergeable_state == "clean":
                 try:
                     pull_request.merge(delete_branch=True)
-                    print(f"#{pull_request} merged successfully.")
+                    logger.info("#%s merged successfully.", pull_request)
                     break
                 except UnknownObjectException:
                     active_pulls = self.github.get_user(self.username).get_repo(self.repository).get_pulls()
                     if pull_request in active_pulls:
-                        print(f"#{pull_request} could not be merged automatically. Proceeding with next pull request.")
+                        logger.warning("#%s could not be merged automatically. "
+                                       "Proceeding with next pull request.", pull_request)
                         continue
-                    print(f"#{pull_request} merged successfully, "
-                          f"but experienced difficulties with branch deletion.")
+                    logger.info("#%s merged successfully, "
+                                "but experienced difficulties with branch deletion.", pull_request)
                     break
-            print(f"Pull request #{pull_request.number} status is {pull_request.mergeable_state}.")
+            logger.info("Pull request #%s status is %s.", pull_request.number, pull_request.mergeable_state)
 
     @staticmethod
     def _update_reviewers(pull_request):
