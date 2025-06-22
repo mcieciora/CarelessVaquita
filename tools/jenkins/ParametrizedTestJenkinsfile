@@ -219,11 +219,11 @@ pipeline {
                         script {
                             sh(script: "docker run --rm test_image python -m pytest --collect-only >> in_docker_log.txt")
                             sh(script: "cat in_docker_log.txt")
-                            String in_docker_value = sh(script: "grep -c '<Function' in_docker_log.txt", returnStdout: true).toInteger()
+                            Integer in_docker_value = sh(script: "grep -c '<Function' in_docker_log.txt", returnStdout: true).toInteger()
 
                             sh(script: "docker run --rm --volume \$(pwd):/pytest_check test_image python -m pytest --collect-only /pytest_check >> in_workdir_log.txt")
                             sh(script: "cat in_workdir_log.txt")
-                            String in_workdir_value = sh(script: "grep -c '<Function' in_workdir_log.txt", returnStdout: true).toInteger()
+                            Integer in_workdir_value = sh(script: "grep -c '<Function' in_workdir_log.txt", returnStdout: true).toInteger()
 
                             if (in_docker_value != in_workdir_value) {
                                 unstable("Stage reported as unstable.")
