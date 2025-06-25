@@ -1,6 +1,7 @@
 pipelineJob("DockerhubImageCleanUp_INPUT.PROJECT_NAME") {
     parameters {
         stringParam("SCRIPT_BRANCH", "develop", "Pipeline script branch.")
+        stringParam("CUSTOM_DAYS_POLICY", "", "Custom number of days to keep docker images.")
     }
     triggers {
         cron("H 23 * * *")
