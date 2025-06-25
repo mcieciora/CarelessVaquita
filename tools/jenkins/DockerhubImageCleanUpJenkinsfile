@@ -9,6 +9,7 @@ pipeline {
     }
     parameters {
         string(name: "SCRIPT_BRANCH", defaultValue: "develop", description: "Execution branch.")
+        string(name: "CUSTOM_DAYS_POLICY", defaultValue: "", description: "Custom number of days to keep docker images.")
     }
     options {
         skipDefaultCheckout()
@@ -31,12 +32,14 @@ pipeline {
             steps {
                 script {
                     withCredentials([usernamePassword(credentialsId: "dockerhub_id", usernameVariable: "USERNAME", passwordVariable: "PASSWORD")]) {
-                        sh "chmod +x tools/shell_scripts/delete_old_dockerhub_tags.sh"
                         withEnv(getToolsConfig()) {
-                            return_value = sh(script: "tools/shell_scripts/delete_old_dockerhub_tags.sh", returnStdout: true).trim()
-                        }
-                        if (return_value.contains("Could not delete tag")) {
-                            unstable(return_value)
+                            String DAYS_NUMBER = params.CUSTOM_DAYS_POLICY ? params.CUSTOM_DAYS_POLICY : env.DAYS_TO_KEEP_DOCKERHUB_IMAGES_POLICY
+                            sh "chmod +x tools/shell_scripts/delete_old_dockerhub_tags.sh"
+                            String return_value = sh(script: "tools/shell_scripts/delete_old_dockerhub_tags.sh ${DAYS_NUMBER}", returnStdout: true).trim()
+                            echo "${return_value}"
+                            if (return_value.contains("Could not delete tag")) {
+                                unstable(return_value)
+                            }
                         }
                     }
                 }
