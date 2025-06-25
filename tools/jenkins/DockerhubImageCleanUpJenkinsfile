@@ -32,18 +32,13 @@ pipeline {
             steps {
                 script {
                     withCredentials([usernamePassword(credentialsId: "dockerhub_id", usernameVariable: "USERNAME", passwordVariable: "PASSWORD")]) {
-                        sh "chmod +x tools/shell_scripts/delete_old_dockerhub_tags.sh"
-                        if (params.CUSTOM_DAYS_POLICY) {
-                            DAYS_NUMBER = params.CUSTOM_DAYS_POLICY
-                        }
-                        else {
-                            withEnv(getToolsConfig()) {
-                                DAYS_NUMBER = env.DAYS_TO_KEEP_DOCKERHUB_IMAGES_POLICY
+                        withEnv(getToolsConfig()) {
+                            String DAYS_NUMBER = params.CUSTOM_DAYS_POLICY ? params.CUSTOM_DAYS_POLICY : env.DAYS_TO_KEEP_DOCKERHUB_IMAGES_POLICY
+                            sh "chmod +x tools/shell_scripts/delete_old_dockerhub_tags.sh"
+                            return_value = sh(script: "tools/shell_scripts/delete_old_dockerhub_tags.sh ${DAYS_NUMBER}", returnStdout: true).trim()
+                            if (return_value.contains("Could not delete tag")) {
+                                unstable(return_value)
                             }
-                        }
-                        return_value = sh(script: "tools/shell_scripts/delete_old_dockerhub_tags.sh ${DAYS_NUMBER}", returnStdout: true).trim()
-                        if (return_value.contains("Could not delete tag")) {
-                            unstable(return_value)
                         }
                     }
                 }
