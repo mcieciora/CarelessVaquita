@@ -14,6 +14,7 @@ TOKEN=$(jq -r '.token' token.json)
 curl https://registry.hub.docker.com/v2/repositories/"$DOCKERHUB_REPO"/tags > all_tags.json
 
 jq -c '.results[]' all_tags.json | while read -r TAG; do
+  echo "$TAG:"
   TAG_NAME=$(echo "$TAG" | jq -r '.name')
   TAG_LAST_PULLED=$(echo "$TAG" | jq -r '.tag_last_pulled')
   TAG_LAST_PULLED_TIMESTAMP=$(date -d "$TAG_LAST_PULLED" +%s)
