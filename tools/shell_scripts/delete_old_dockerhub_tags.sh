@@ -3,6 +3,8 @@
 PROTECTED_TAGS=("latest" "merge_bot" "test_image")
 CURRENT_DATE=$(date +%s)
 
+DAYS_TO_KEEP_DOCKERHUB_IMAGES_POLICY=$1
+
 echo "{'username': $USERNAME, 'password': $PASSWORD}" > token_creds.json
 
 curl -s -X POST https://hub.docker.com/v2/users/login/ -d @token_creds.json -H "Content-Type: application/json" > token.json
