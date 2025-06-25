@@ -26,7 +26,7 @@ pipeline {
                                     sh "docker login --username $USERNAME --password $PASSWORD"
                                     sh "chmod +x tools/shell_scripts/scan_docker_scout.sh"
                                     withEnv(getToolsConfig()) {
-                                        return_value = sh(script: "tools/shell_scripts/scan_docker_scout.sh ${TAG}", returnStdout: true).trim()
+                                        String return_value = sh(script: "tools/shell_scripts/scan_docker_scout.sh ${TAG}", returnStdout: true).trim()
                                     }
                                     if (return_value.contains("Script failed, because vulnerabilities were found.")) {
                                         unstable(return_value)
@@ -40,7 +40,7 @@ pipeline {
                             script {
                                 sh "chmod +x tools/shell_scripts/scan_docker_trivy.sh"
                                 withEnv(getToolsConfig()) {
-                                    return_value = sh(script: "tools/shell_scripts/scan_docker_trivy.sh ${TAG}", returnStdout: true).trim()
+                                    String return_value = sh(script: "tools/shell_scripts/scan_docker_trivy.sh ${TAG}", returnStdout: true).trim()
                                 }
                                 if (return_value.contains("Script failed, because vulnerabilities were found.")) {
                                     unstable(return_value)
@@ -53,7 +53,7 @@ pipeline {
                             script {
                                 sh "chmod +x tools/shell_scripts/scan_docker_dive.sh"
                                 withEnv(getToolsConfig()) {
-                                    return_value = sh(script: "tools/shell_scripts/scan_docker_dive.sh ${TAG}", returnStdout: true).trim()
+                                    String return_value = sh(script: "tools/shell_scripts/scan_docker_dive.sh ${TAG}", returnStdout: true).trim()
                                 }
                                 if (return_value.contains("Script failed, because vulnerabilities were found.")) {
                                     unstable(return_value)
