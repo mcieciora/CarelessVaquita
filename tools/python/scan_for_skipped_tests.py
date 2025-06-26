@@ -1,4 +1,4 @@
-from sys import exit  # pylint: disable=redefined-builtin
+from sys import exit
 from glob import glob
 from logging import getLogger
 

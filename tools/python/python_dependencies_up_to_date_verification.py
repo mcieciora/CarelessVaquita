@@ -1,4 +1,4 @@
-from sys import executable  # pylint: disable=redefined-builtin
+from sys import executable
 from glob import glob
 from subprocess import check_output
 from json import loads
