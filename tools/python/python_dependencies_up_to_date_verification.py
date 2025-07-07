@@ -2,10 +2,7 @@ from sys import executable
 from glob import glob
 from subprocess import check_output
 from json import loads
-from logging import getLogger
-
-
-logger = getLogger(__name__)
+from logging import basicConfig, warning
 
 
 def check_for_outdated_packages():
@@ -37,11 +34,11 @@ def check_for_outdated_packages():
 
                 suggested_version = current_version
                 if name in outdated_dependencies and current_version != outdated_dependencies[name]["version"]:
-                    logger.info("WARNING: Version of %s declared in requirements file (%s) is "
+                    warning("WARNING: Version of %s declared in requirements file (%s) is "
                                 "different than the one installed %s", name, current_version,
                                 outdated_dependencies[name]["version"])
                 if name in outdated_dependencies and current_version != outdated_dependencies[name]["latest_version"]:
-                    logger.info(
+                    warning(
                         "WARNING: %s is outdated. Consider upgrading from %s to %s", name, current_version,
                         outdated_dependencies[name]["latest_version"])
                     suggested_version = outdated_dependencies[name]['latest_version']
@@ -52,4 +49,5 @@ def check_for_outdated_packages():
 
 
 if __name__ == "__main__":
+    basicConfig(level="DEBUG")
     check_for_outdated_packages()

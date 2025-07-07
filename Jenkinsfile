@@ -110,7 +110,7 @@ pipeline {
         stage ("Code analysis") {
             when {
                 expression {
-                    return REGULAR_BUILD == "true"
+                    return REGULAR_BUILD.toBoolean() == true
                 }
             }
             parallel {
@@ -284,7 +284,7 @@ pipeline {
         stage ("Staging") {
             when {
                 expression {
-                    return REGULAR_BUILD == "true"
+                    return REGULAR_BUILD.toBoolean() == true
                 }
             }
             parallel {
