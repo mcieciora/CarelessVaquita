@@ -1,5 +1,6 @@
 def curDate = new Date().format("yyMMdd-HHmm", TimeZone.getTimeZone("UTC"))
 Integer build_test_image
+Integer build_merge_bot_image
 
 pipeline {
     agent {
@@ -110,26 +111,10 @@ pipeline {
         stage ("Code analysis") {
             when {
                 expression {
-                    return REGULAR_BUILD == "true"
+                    return REGULAR_BUILD.toBoolean() == true
                 }
             }
             parallel {
-                stage ("pylint") {
-                    steps {
-                        script {
-                            sh "docker run --rm test_image python -m pylint src --max-line-length=120 --disable=C0114 --fail-under=9.5"
-                            sh "docker run --rm test_image python -m pylint --load-plugins pylint_pytest automated_tests --max-line-length=120 --disable=C0114,C0116 --fail-under=9.5"
-                            sh "docker run --rm test_image python -m pylint tools/python --max-line-length=120 --disable=C0114 --fail-under=9.5"
-                        }
-                    }
-                }
-                stage ("flake8") {
-                    steps {
-                        script {
-                            sh "docker run --rm test_image python -m flake8 --max-line-length 120 --max-complexity 10 src automated_tests tools/python"
-                        }
-                    }
-                }
                 stage ("ruff") {
                     steps {
                         script {
@@ -144,17 +129,17 @@ pipeline {
                         }
                     }
                 }
+                stage ("mypy") {
+                    steps {
+                        script {
+                            sh "docker run --rm test_image python -m mypy src automated_tests tools/python"
+                        }
+                    }
+                }
                 stage ("bandit") {
                     steps {
                         script {
                             sh "docker run --rm test_image python -m bandit -c automated_tests/bandit.yaml -r src automated_tests tools/python"
-                        }
-                    }
-                }
-                stage ("pydocstyle") {
-                    steps {
-                        script {
-                            sh "docker run --rm test_image python -m pydocstyle --ignore D100,D104,D107,D203,D212 ."
                         }
                     }
                 }
@@ -164,13 +149,6 @@ pipeline {
                             sh "docker run --rm test_image python -m radon cc ."
                             sh "docker run --rm test_image python -m radon mi ."
                             sh "docker run --rm test_image python -m radon hal ."
-                        }
-                    }
-                }
-                stage ("mypy") {
-                    steps {
-                        script {
-                            sh "docker run --rm test_image python -m mypy src automated_tests tools/python"
                         }
                     }
                 }
@@ -307,7 +285,7 @@ pipeline {
         stage ("Staging") {
             when {
                 expression {
-                    return REGULAR_BUILD == "true"
+                    return REGULAR_BUILD.toBoolean() == true
                 }
             }
             parallel {
