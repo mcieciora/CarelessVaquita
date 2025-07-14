@@ -39,8 +39,10 @@ pipeline {
                                 currentBuild.description = ""
                             case 2:
                                 currentBuild.description = "No active pull requests."
+                                unstable("No active pull requests.")
                             case 3:
                                 currentBuild.description = "Merged with problems."
+                                unstable("Merged with problems.")
                             default:
                                 currentBuild.description = ""
                         }
