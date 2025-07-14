@@ -1,4 +1,4 @@
-from sys import executable
+from sys import executable, exit
 from glob import glob
 from subprocess import check_output
 from json import loads
@@ -15,6 +15,7 @@ def check_for_outdated_packages():
 
     :return: None
     """
+    default_exit_code = 0
     outdated_dependencies_process_output = check_output(
         [executable, "-m", "pip", "list", "-o", "--format", "json"]
     )
@@ -37,15 +38,18 @@ def check_for_outdated_packages():
                     warning("WARNING: Version of %s declared in requirements file (%s) is "
                                 "different than the one installed %s", name, current_version,
                                 outdated_dependencies[name]["version"])
+                    default_exit_code = 3
                 if name in outdated_dependencies and current_version != outdated_dependencies[name]["latest_version"]:
                     warning(
                         "WARNING: %s is outdated. Consider upgrading from %s to %s", name, current_version,
                         outdated_dependencies[name]["latest_version"])
                     suggested_version = outdated_dependencies[name]['latest_version']
+                    default_exit_code = 3
                 output_req_file.append(f"{name}=={suggested_version}\n")
 
         with open(req_file, mode="w", encoding="utf-8") as req:
             req.writelines(output_req_file)
+    exit(default_exit_code)
 
 
 if __name__ == "__main__":
