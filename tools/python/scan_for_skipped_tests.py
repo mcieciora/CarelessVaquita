@@ -1,9 +1,6 @@
 from sys import exit
 from glob import glob
-from logging import getLogger
-
-
-logger = getLogger(__name__)
+from logging import basicConfig, error, INFO
 
 
 def scan_for_skipped_tests():
@@ -19,10 +16,11 @@ def scan_for_skipped_tests():
             pattern = "@mark.skip"
             if pattern in file_content:
                 skipped_tests_dict[python_file] = file_content.count(pattern)
-                logger.error("%s skip mark(s) found in: %s", file_content.count(pattern), python_file)
+                error("%s skip mark(s) found in: %s", file_content.count(pattern), python_file)
     if skipped_tests_dict.keys():
         exit(1)
 
 
 if __name__ == "__main__":
+    basicConfig(level=INFO)
     scan_for_skipped_tests()
