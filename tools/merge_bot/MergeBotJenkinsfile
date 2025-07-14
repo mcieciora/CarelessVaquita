@@ -33,9 +33,16 @@ pipeline {
                         sh "cp $cv_credentials_file .credentials"
                     }
                     withEnv(getToolsConfig()) {
-                        return_value = sh(script: "docker run --rm --env-file .tools_config --env-file .credentials merge_bot --merge", returnStdout: true).trim()
-                        if (!return_value.contains("merged successfully.")) {
-                            unstable(return_value)
+                        return_value = sh(script: "docker run --rm --env-file .tools_config --env-file .credentials merge_bot --merge", returnStatus: true)
+                        switch(return_value) {
+                            case 1:
+                                currentBuild.description = ""
+                            case 2:
+                                currentBuild.description = "No active pull requests."
+                            case 3:
+                                currentBuild.description = "Merged with problems."
+                            default:
+                                currentBuild.description = ""
                         }
                     }
                 }
