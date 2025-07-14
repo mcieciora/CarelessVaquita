@@ -36,12 +36,15 @@ class MergeBot:
 
         :return: None
         """
+        default_exit_code = 0
         active_pulls = self.github.get_user(self.username).get_repo(self.repository).get_pulls()
+        found_mergeable_pull_request = False
         if not list(active_pulls):
             info("No active pull requests.")
-            exit(2)
+            default_exit_code = 2
         for pull_request in active_pulls:
             if pull_request.mergeable and pull_request.mergeable_state == "clean":
+                found_mergeable_pull_request = True
                 try:
                     pull_request.merge(delete_branch=True)
                     info("#%s merged successfully.", pull_request)
@@ -54,8 +57,11 @@ class MergeBot:
                         continue
                     info("#%s merged successfully, "
                                 "but experienced difficulties with branch deletion.", pull_request)
-                    exit(3)
+                    default_exit_code = 3
             info("Pull request #%s status is %s.", pull_request.number, pull_request.mergeable_state)
+        if not found_mergeable_pull_request:
+            default_exit_code = 4
+        exit(default_exit_code)
 
     @staticmethod
     def _update_reviewers(pull_request):

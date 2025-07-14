@@ -43,6 +43,10 @@ pipeline {
                             currentBuild.description = "Merged with problems."
                             unstable("Merged with problems.")
                         }
+                        else if (merge_bot_status == 4) {
+                            currentBuild.description = "No pull requests ready to merge."
+                            unstable("No pull requests ready to merge.")
+                        }
                         else {
                             currentBuild.description = ""
                         }
