@@ -1,5 +1,5 @@
 from os import environ
-from sys import argv
+from sys import argv, exit
 from argparse import ArgumentParser
 from logging import getLogger
 from github import Auth, Github
@@ -56,7 +56,7 @@ class MergeBot:
                         continue
                     logger.info("#%s merged successfully, "
                                 "but experienced difficulties with branch deletion.", pull_request)
-                    break
+                    exit(2)
             logger.info("Pull request #%s status is %s.", pull_request.number, pull_request.mergeable_state)
 
     @staticmethod
