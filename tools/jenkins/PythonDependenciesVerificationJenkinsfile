@@ -45,7 +45,7 @@ pipeline {
                 script {
                     Integer python_dependencies_status = sh(script: "docker run --name python_dependency_container test_image python tools/python/python_dependencies_up_to_date_verification.py", returnStatus: true)
                     if (python_dependencies_status == 100) {
-                        unstable("Script failed on dependencies versions verification.")
+                        unstable("Some dependency packages are outdated. Check log or get updated requirements.txt files from archived artifacts.")
                     }
                 }
             }
