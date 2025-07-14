@@ -79,13 +79,7 @@ if __name__ == "__main__":
         parser.add_argument("--branch", dest="branch_name", required=True, help="Branch name")
         parser.add_argument("--base", dest="base_branch", required=True, help="Base branch")
     args = parser.parse_args()
-
-    from dotenv import load_dotenv
-
-    load_dotenv("../../.credentials")
-
     merge_bot_api = MergeBot()
-    merge_bot_api.merge_pull_request()
     if args.create:
         merge_bot_api.create_pull_request(args.branch_name, args.base_branch)
     else:
