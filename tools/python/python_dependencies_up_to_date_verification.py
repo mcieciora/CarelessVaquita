@@ -38,13 +38,13 @@ def check_for_outdated_packages():
                     warning("WARNING: Version of %s declared in requirements file (%s) is "
                                 "different than the one installed %s", name, current_version,
                                 outdated_dependencies[name]["version"])
-                    default_exit_code = 3
+                    default_exit_code = 100
                 if name in outdated_dependencies and current_version != outdated_dependencies[name]["latest_version"]:
                     warning(
                         "WARNING: %s is outdated. Consider upgrading from %s to %s", name, current_version,
                         outdated_dependencies[name]["latest_version"])
                     suggested_version = outdated_dependencies[name]['latest_version']
-                    default_exit_code = 3
+                    default_exit_code = 100
                 output_req_file.append(f"{name}=={suggested_version}\n")
 
         with open(req_file, mode="w", encoding="utf-8") as req:
