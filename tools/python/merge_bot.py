@@ -42,6 +42,7 @@ class MergeBot:
         active_pulls = self.github.get_user(self.username).get_repo(self.repository).get_pulls()
         if not list(active_pulls):
             logger.info("No active pull requests.")
+            exit(2)
         for pull_request in active_pulls:
             if pull_request.mergeable and pull_request.mergeable_state == "clean":
                 try:
@@ -56,7 +57,7 @@ class MergeBot:
                         continue
                     logger.info("#%s merged successfully, "
                                 "but experienced difficulties with branch deletion.", pull_request)
-                    exit(2)
+                    exit(3)
             logger.info("Pull request #%s status is %s.", pull_request.number, pull_request.mergeable_state)
 
     @staticmethod

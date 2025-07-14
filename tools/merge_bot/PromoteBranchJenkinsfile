@@ -15,6 +15,7 @@ pipeline {
                 script {
                     echo "${BRANCH}"
                     sh "curl -OL https://raw.githubusercontent.com/mcieciora/CarelessVaquita/refs/heads/${BRANCH}/.tools_config"
+                    currentBuild.description = "Promotion branch: ${BRANCH}\nTarget branch: ${TARGET_BRANCH}"
                 }
             }
         }
