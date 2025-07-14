@@ -45,7 +45,7 @@ pipeline {
                         }
                         else if (merge_bot_status == 120) {
                             currentBuild.description = "No pull requests ready to merge."
-                            unstable("No pull requests ready to merge.")
+                            unstable("None of active pull requests are ready to merge.")
                         }
                         else {
                             currentBuild.description = ""
