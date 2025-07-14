@@ -2,7 +2,7 @@ from sys import executable
 from glob import glob
 from subprocess import check_output
 from json import loads
-from logging import basicConfig, warning
+from logging import basicConfig, INFO, warning
 
 
 def check_for_outdated_packages():
@@ -49,5 +49,5 @@ def check_for_outdated_packages():
 
 
 if __name__ == "__main__":
-    basicConfig(level="DEBUG")
+    basicConfig(level=INFO)
     check_for_outdated_packages()
