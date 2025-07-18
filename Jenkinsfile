@@ -57,6 +57,10 @@ pipeline {
                                         sh "docker push ${DOCKERHUB_REPO}:test_image"
                                     }
                                 }
+                                else {
+                                    sh "docker tag test_image ${REGISTRY_URL}/${DOCKERHUB_REPO}:test_image"
+                                    sh "docker push ${DOCKERHUB_REPO}:test_image ${REGISTRY_URL}/${DOCKERHUB_REPO}:test_image"
+                                }
                             }
                         }
                     }
@@ -78,6 +82,10 @@ pipeline {
                                         sh "docker login --username $USERNAME --password $PASSWORD"
                                         sh "docker push ${DOCKERHUB_REPO}:merge_bot"
                                     }
+                                }
+                                else {
+                                    sh "docker tag merge_bot_image ${REGISTRY_URL}/${DOCKERHUB_REPO}:merge_bot"
+                                    sh "docker push ${DOCKERHUB_REPO}:merge_bot ${REGISTRY_URL}/${DOCKERHUB_REPO}:merge_bot"
                                 }
                             }
                         }
@@ -302,6 +310,8 @@ pipeline {
                                 withEnv(getToolsConfig()) {
                                     sh "docker build --build-arg PYTHON_BASE_IMAGE=python:${DEFAULT_IMAGE_TAG} --no-cache -t custom_image ."
                                     sh "docker tag custom_image ${DOCKERHUB_REPO}:${BRANCH_TO_USE}-${curDate}"
+                                    sh "docker tag custom_image ${REGISTRY_URL}/${DOCKERHUB_REPO}:${BRANCH_TO_USE}-${curDate}"
+                                    sh "docker push ${DOCKERHUB_REPO}:${BRANCH_TO_USE}-${curDate} ${REGISTRY_URL}/${DOCKERHUB_REPO}:${BRANCH_TO_USE}-${curDate}"
                                     withCredentials([usernamePassword(credentialsId: "dockerhub_id", usernameVariable: "USERNAME", passwordVariable: "PASSWORD")]) {
                                         sh "docker login --username $USERNAME --password $PASSWORD"
                                         sh "docker push ${DOCKERHUB_REPO}:${BRANCH_TO_USE}-${curDate}"
