@@ -1,2 +1,1 @@
-requests==2.32.4
-types-requests==2.32.4.20250611
+pytest==8.4.2
