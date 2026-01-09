@@ -47,8 +47,11 @@ def main(argv=None):
         Result: 9
     """
     parser = argparse.ArgumentParser(description="Simple CLI calculator")
-    parser.add_argument("operation", choices=["add", "subtract", "multiply", "divide"],
-                        help="Arithmetic operation to perform")
+    parser.add_argument(
+        "operation",
+        choices=["add", "subtract", "multiply", "divide"],
+        help="Arithmetic operation to perform",
+    )
     parser.add_argument("a", type=float, help="First number")
     parser.add_argument("b", type=float, help="Second number")
 
