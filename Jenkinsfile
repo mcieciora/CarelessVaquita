@@ -314,7 +314,7 @@ pipeline {
                     steps {
                         script {
                             withEnv(getConfig(".tools_config")) {
-                                sh "docker build --build-arg PYTHON_BASE_IMAGE=python:${DEFAULT_IMAGE_TAG} --no-cache -t custom_image ."
+                                sh "docker build --build-arg DEFAULT_IMAGE_TAG=${DEFAULT_IMAGE_TAG} --no-cache -t custom_image ."
                                 sh "docker tag custom_image ${DOCKERHUB_REPO}:${BRANCH_TO_USE}-${curDate}"
                                 withEnv(getConfig(".credentials")) {
                                     echo "${BRANCH_TO_USE.replace("/", "_")}"
