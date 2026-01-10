@@ -354,6 +354,22 @@ pipeline {
                             withCredentials([sshUserPrivateKey(credentialsId: "agent_${NODE_NAME}", keyFileVariable: "key")]) {
                                 sh 'GIT_SSH_COMMAND="ssh -i $key"'
                                 sh "git tag -a $TAG_NAME -m $TAG_NAME && git push origin $TAG_NAME"
+
+                                withEnv(getConfig(".credentials")) {
+                                    sh """
+                                    curl -X POST https://api.github.com/repos/mcieciora/CarelessVaquita/releases \\
+                                    -H "Authorization: token ${GITHUB_API_TOKEN}" \\
+                                    -H "Accept: application/vnd.github+json" \\
+                                    -H "Content-Type: application/json" \\
+                                    -d '{
+                                      "tag_name": "${TAG_NAME}",
+                                      "name": "Release ${TAG_NAME}",
+                                      "body": "Release ${TAG_NAME} created via API",
+                                      "draft": false,
+                                      "prerelease": false
+                                    }'
+                                    """
+                                }
                             }
                         }
                     }
