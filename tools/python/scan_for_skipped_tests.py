@@ -1,5 +1,6 @@
-from sys import exit  # pylint: disable=redefined-builtin
+from sys import exit
 from glob import glob
+from logging import basicConfig, error, INFO
 
 
 def scan_for_skipped_tests():
@@ -15,12 +16,11 @@ def scan_for_skipped_tests():
             pattern = "@mark.skip"
             if pattern in file_content:
                 skipped_tests_dict[python_file] = file_content.count(pattern)
-                print(
-                    f"[ERR] {file_content.count(pattern)} skip mark(s) found in: {python_file}"
-                )
+                error("%s skip mark(s) found in: %s", file_content.count(pattern), python_file)
     if skipped_tests_dict.keys():
         exit(1)
 
 
 if __name__ == "__main__":
+    basicConfig(level=INFO)
     scan_for_skipped_tests()

@@ -18,6 +18,7 @@ pipeline {
                     withEnv(getToolsConfig()) {
                         git branch: BRANCH, url: REPO_URL
                     }
+                    currentBuild.description = "Branch: ${BRANCH}\nTag: ${CUSTOM_TAG}\nDockerfile: ${DOCKERFILE_PATH}"
                 }
             }
         }

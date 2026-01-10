@@ -1,7 +1,9 @@
 from os.path import join
 from sys import argv
+from logging import getLogger
 
 PROJECT_ROOT_PATH = None
+logger = getLogger(__name__)
 
 
 def _get_template_content(template_path):
@@ -58,4 +60,4 @@ def generate_test_jenkinsfile():
 if __name__ == "__main__":
     PROJECT_ROOT_PATH = argv[1]
     generate_test_jenkinsfile()
-    print("Generated tools/jenkins/ParametrizedTestJenkinsfile")
+    logger.info("Generated tools/jenkins/ParametrizedTestJenkinsfile")

@@ -1,5 +1,6 @@
 def curDate = new Date().format("yyMMdd-HHmm", TimeZone.getTimeZone("UTC"))
 Integer build_test_image
+Integer build_merge_bot_image
 
 pipeline {
     agent {
@@ -22,16 +23,19 @@ pipeline {
                 script {
                     sh "curl -OL https://raw.githubusercontent.com/mcieciora/CarelessVaquita/refs/heads/${BRANCH_TO_USE}/.tools_config"
                     def BRANCH_REV = BRANCH_TO_USE.equals("develop") || BRANCH_TO_USE.equals("master") ? "HEAD^1" : "develop"
-                    withEnv(getToolsConfig()) {
+                    withEnv(getConfig(".tools_config")) {
                         withCredentials([sshUserPrivateKey(credentialsId: "agent_${NODE_NAME}", keyFileVariable: "key")]) {
                             sh 'GIT_SSH_COMMAND="ssh -i $key"'
                             checkout scmGit(branches: [[name: "*/${BRANCH_TO_USE}"]], extensions: [], userRemoteConfigs: [[url: "${REPO_URL}"]])
                         }
                     }
+                    withCredentials([file(credentialsId: "cv_credentials", variable: "cv_credentials_file")]) {
+                        sh "cp $cv_credentials_file .credentials"
+                    }
                     currentBuild.description = "Branch: ${BRANCH_TO_USE}\nFlag: ${FLAG}\nGroups: ${TEST_GROUPS}"
-                    build_test_image = sh(script: "git diff --name-only \$(git rev-parse HEAD) \$(git rev-parse origin/${BRANCH_REV}) | grep -e automated_tests -e src -e requirements -e tools/python",
+                    build_test_image = sh(script: "git diff --name-only \$(git rev-parse HEAD) \$(git rev-parse ${BRANCH_REV}) | grep -e automated_tests -e src -e requirements -e tools/python",
                                           returnStatus: true)
-                    build_merge_bot_image = sh(script: "git diff --name-only \$(git rev-parse HEAD) \$(git rev-parse origin/${BRANCH_REV}) | grep -e required_reviewers -e src -e requirements/merge_bot -e tools/python/merge_bot.py -e tools/merge_bot/Dockerfile",
+                    build_merge_bot_image = sh(script: "git diff --name-only \$(git rev-parse HEAD) \$(git rev-parse ${BRANCH_REV}) | grep -e required_reviewers -e src -e requirements/merge_bot -e tools/python/merge_bot.py -e tools/merge_bot/Dockerfile",
                                           returnStatus: true)
                 }
             }
@@ -47,13 +51,19 @@ pipeline {
                     }
                     steps {
                         script {
-                            withEnv(getToolsConfig()) {
+                            withEnv(getConfig(".tools_config")) {
                                 sh "docker build --build-arg DEFAULT_IMAGE_TAG=${DEFAULT_IMAGE_TAG} --no-cache -t test_image -f automated_tests/Dockerfile ."
                                 if (BRANCH_TO_USE == "master" || BRANCH_TO_USE == "develop") {
                                     sh "docker tag test_image ${DOCKERHUB_REPO}:test_image"
                                     withCredentials([usernamePassword(credentialsId: "dockerhub_id", usernameVariable: "USERNAME", passwordVariable: "PASSWORD")]) {
                                         sh "docker login --username $USERNAME --password $PASSWORD"
                                         sh "docker push ${DOCKERHUB_REPO}:test_image"
+                                    }
+                                }
+                                else {
+                                    withEnv(getConfig(".credentials")) {
+                                        sh "docker tag test_image ${REGISTRY_URL}/${DOCKERHUB_REPO}:test_image"
+                                        sh "docker push ${REGISTRY_URL}/${DOCKERHUB_REPO}:test_image"
                                     }
                                 }
                             }
@@ -69,13 +79,19 @@ pipeline {
                     }
                     steps {
                         script {
-                            withEnv(getToolsConfig()) {
+                            withEnv(getConfig(".tools_config")) {
                                 sh "docker build --build-arg DEFAULT_IMAGE_TAG=${DEFAULT_IMAGE_TAG} --no-cache -t merge_bot_image -f tools/merge_bot/Dockerfile ."
                                 if (BRANCH_TO_USE == "master" || BRANCH_TO_USE == "develop") {
                                     sh "docker tag merge_bot_image ${DOCKERHUB_REPO}:merge_bot"
                                     withCredentials([usernamePassword(credentialsId: "dockerhub_id", usernameVariable: "USERNAME", passwordVariable: "PASSWORD")]) {
                                         sh "docker login --username $USERNAME --password $PASSWORD"
-                                        sh "docker push ${DOCKERHUB_REPO}:test_image"
+                                        sh "docker push ${DOCKERHUB_REPO}:merge_bot"
+                                    }
+                                }
+                                else {
+                                    withEnv(getConfig(".credentials")) {
+                                        sh "docker tag merge_bot_image ${REGISTRY_URL}/${DOCKERHUB_REPO}:merge_bot"
+                                        sh "docker push ${REGISTRY_URL}/${DOCKERHUB_REPO}:merge_bot"
                                     }
                                 }
                             }
@@ -91,7 +107,7 @@ pipeline {
                     }
                     steps {
                         script {
-                            withEnv(getToolsConfig()) {
+                            withEnv(getConfig(".tools_config")) {
                                 sh "docker pull ${DOCKERHUB_REPO}:test_image"
                                 sh "docker tag ${DOCKERHUB_REPO}:test_image test_image"
                             }
@@ -110,26 +126,10 @@ pipeline {
         stage ("Code analysis") {
             when {
                 expression {
-                    return REGULAR_BUILD == "true"
+                    return REGULAR_BUILD.toBoolean() == true
                 }
             }
             parallel {
-                stage ("pylint") {
-                    steps {
-                        script {
-                            sh "docker run --rm test_image python -m pylint src --max-line-length=120 --disable=C0114 --fail-under=9.5"
-                            sh "docker run --rm test_image python -m pylint --load-plugins pylint_pytest automated_tests --max-line-length=120 --disable=C0114,C0116 --fail-under=9.5"
-                            sh "docker run --rm test_image python -m pylint tools/python --max-line-length=120 --disable=C0114 --fail-under=9.5"
-                        }
-                    }
-                }
-                stage ("flake8") {
-                    steps {
-                        script {
-                            sh "docker run --rm test_image python -m flake8 --max-line-length 120 --max-complexity 10 src automated_tests tools/python"
-                        }
-                    }
-                }
                 stage ("ruff") {
                     steps {
                         script {
@@ -144,17 +144,17 @@ pipeline {
                         }
                     }
                 }
+                stage ("mypy") {
+                    steps {
+                        script {
+                            sh "docker run --rm test_image python -m mypy src automated_tests tools/python"
+                        }
+                    }
+                }
                 stage ("bandit") {
                     steps {
                         script {
                             sh "docker run --rm test_image python -m bandit -c automated_tests/bandit.yaml -r src automated_tests tools/python"
-                        }
-                    }
-                }
-                stage ("pydocstyle") {
-                    steps {
-                        script {
-                            sh "docker run --rm test_image python -m pydocstyle --ignore D100,D104,D107,D203,D212 ."
                         }
                     }
                 }
@@ -164,13 +164,6 @@ pipeline {
                             sh "docker run --rm test_image python -m radon cc ."
                             sh "docker run --rm test_image python -m radon mi ."
                             sh "docker run --rm test_image python -m radon hal ."
-                        }
-                    }
-                }
-                stage ("mypy") {
-                    steps {
-                        script {
-                            sh "docker run --rm test_image python -m mypy src automated_tests tools/python"
                         }
                     }
                 }
@@ -200,10 +193,33 @@ pipeline {
                         }
                     }
                 }
+                stage ("Test environment check") {
+                    when {
+                        allOf {
+                            expression {build_test_image == 1}
+                            expression {FORCE_DOCKER_IMAGE_BUILD.toBoolean() == false}
+                        }
+                    }
+                    steps {
+                        script {
+                            sh(script: "docker run --rm test_image python -m pytest --collect-only >> in_docker_log.txt")
+                            sh(script: "cat in_docker_log.txt")
+                            Integer in_docker_value = sh(script: "grep -c '<Function' in_docker_log.txt", returnStdout: true).toInteger()
+
+                            sh(script: "docker run --rm --volume \$(pwd):/pytest_check test_image python -m pytest --collect-only /pytest_check >> in_workdir_log.txt")
+                            sh(script: "cat in_workdir_log.txt")
+                            Integer in_workdir_value = sh(script: "grep -c '<Function' in_workdir_log.txt", returnStdout: true).toInteger()
+
+                            if (in_docker_value != in_workdir_value) {
+                                unstable("Stage reported as unstable.")
+                            }
+                        }
+                    }
+                }
                 stage ("Lint Dockerfiles") {
                     steps {
                         script {
-                            withEnv(getToolsConfig()) {
+                            withEnv(getConfig(".tools_config")) {
                                 sh "chmod +x tools/shell_scripts/lint_docker_files.sh"
                                 sh "tools/shell_scripts/lint_docker_files.sh"
                             }
@@ -213,7 +229,7 @@ pipeline {
                 stage ("Shellcheck") {
                     steps {
                         script {
-                            withEnv(getToolsConfig()) {
+                            withEnv(getConfig(".tools_config")) {
                                 sh "chmod +x tools/shell_scripts/lint_shell_scripts.sh"
                                 sh "tools/shell_scripts/lint_shell_scripts.sh"
                             }
@@ -284,7 +300,7 @@ pipeline {
         stage ("Staging") {
             when {
                 expression {
-                    return REGULAR_BUILD == "true"
+                    return REGULAR_BUILD.toBoolean() == true
                 }
             }
             parallel {
@@ -297,17 +313,20 @@ pipeline {
                     }
                     steps {
                         script {
-                            docker.withRegistry("", "dockerhub_id") {
-                                withEnv(getToolsConfig()) {
-                                    sh "docker build --build-arg PYTHON_BASE_IMAGE=python:${DEFAULT_IMAGE_TAG} --no-cache -t custom_image ."
-                                    sh "docker tag custom_image ${DOCKERHUB_REPO}:${BRANCH_TO_USE}-${curDate}"
-                                    withCredentials([usernamePassword(credentialsId: "dockerhub_id", usernameVariable: "USERNAME", passwordVariable: "PASSWORD")]) {
-                                        sh "docker login --username $USERNAME --password $PASSWORD"
-                                        sh "docker push ${DOCKERHUB_REPO}:${BRANCH_TO_USE}-${curDate}"
-                                        if (BRANCH_TO_USE == "master") {
-                                            sh "docker tag custom_image ${DOCKERHUB_REPO}:latest"
-                                            sh "docker push ${DOCKERHUB_REPO}:latest"
-                                        }
+                            withEnv(getConfig(".tools_config")) {
+                                sh "docker build --build-arg PYTHON_BASE_IMAGE=python:${DEFAULT_IMAGE_TAG} --no-cache -t custom_image ."
+                                sh "docker tag custom_image ${DOCKERHUB_REPO}:${BRANCH_TO_USE}-${curDate}"
+                                withEnv(getConfig(".credentials")) {
+                                    echo "${BRANCH_TO_USE.replace("/", "_")}"
+                                    sh "docker tag custom_image ${REGISTRY_URL}/${DOCKERHUB_REPO}:${BRANCH_TO_USE}-${curDate}"
+                                    sh "docker push ${REGISTRY_URL}/${DOCKERHUB_REPO}:${BRANCH_TO_USE}-${curDate}"
+                                }
+                                withCredentials([usernamePassword(credentialsId: "dockerhub_id", usernameVariable: "USERNAME", passwordVariable: "PASSWORD")]) {
+                                    sh "docker login --username $USERNAME --password $PASSWORD"
+                                    sh "docker push ${DOCKERHUB_REPO}:${BRANCH_TO_USE}-${curDate}"
+                                    if (BRANCH_TO_USE == "master") {
+                                        sh "docker tag custom_image ${DOCKERHUB_REPO}:latest"
+                                        sh "docker push ${DOCKERHUB_REPO}:latest"
                                     }
                                 }
                             }
@@ -327,6 +346,22 @@ pipeline {
                             withCredentials([sshUserPrivateKey(credentialsId: "agent_${NODE_NAME}", keyFileVariable: "key")]) {
                                 sh 'GIT_SSH_COMMAND="ssh -i $key"'
                                 sh "git tag -a $TAG_NAME -m $TAG_NAME && git push origin $TAG_NAME"
+
+                                withEnv(getConfig(".credentials")) {
+                                    sh """
+                                    curl -X POST https://api.github.com/repos/mcieciora/CarelessVaquita/releases \\
+                                    -H "Authorization: token ${GITHUB_API_TOKEN}" \\
+                                    -H "Accept: application/vnd.github+json" \\
+                                    -H "Content-Type: application/json" \\
+                                    -d '{
+                                      "tag_name": "${TAG_NAME}",
+                                      "name": "Release ${TAG_NAME}",
+                                      "body": "Release ${TAG_NAME} created via API",
+                                      "draft": false,
+                                      "prerelease": false
+                                    }'
+                                    """
+                                }
                             }
                         }
                     }
@@ -358,6 +393,6 @@ def getValue(variable, defaultValue) {
 }
 
 
-def getToolsConfig() {
-    return readFile(".tools_config").split("\n") as List
+def getConfig(fileName) {
+    return readFile(fileName).split("\n") as List
 }

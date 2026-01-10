@@ -40,7 +40,7 @@ known and the moment of extinction will likely go completely unnoticed, but comm
 
 - Setup git flow. Source: [Atlassian - Gitflow workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow)
 
-- Generate fine-grained personal token with "Read access to metadata" and "Read and Write access to code and pull requests" permissions set. Source: [Fine-grained personal access token](https://github.com/settings/tokens?type=beta)
+- Generate fine-grained personal token for repository with "Read access to metadata", "Read and Write access to Pull requests" and "Read and Write access to Workflows" permissions set. Source: [Fine-grained personal access token](https://github.com/settings/tokens?type=beta)
 
 - Create repository ruleset for default and develop branches with "Restrict deletions", "Require a pull request before merging" and "Block force pushes" set. Source [Creating rulesets for a repository](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/creating-rulesets-for-a-repository)
 

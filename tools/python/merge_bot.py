@@ -1,6 +1,7 @@
 from os import environ
-from sys import argv
+from sys import argv, exit
 from argparse import ArgumentParser
+from logging import basicConfig, info, INFO, warning
 from github import Auth, Github
 from github.GithubException import UnknownObjectException
 
@@ -27,7 +28,7 @@ class MergeBot:
             body=f"Automatically created pull request that merges {branch_name} into {base_branch}."
         )
         self._update_reviewers(return_value)
-        print(f"Created pull request: #{return_value.number}")
+        info("Created pull request: #%s", return_value.number)
 
     def merge_pull_request(self):
         """
@@ -36,23 +37,29 @@ class MergeBot:
         :return: None
         """
         active_pulls = self.github.get_user(self.username).get_repo(self.repository).get_pulls()
+        found_mergeable_pull_request = False
         if not list(active_pulls):
-            print("No active pull requests.")
+            info("No active pull requests.")
+            exit(100)
         for pull_request in active_pulls:
             if pull_request.mergeable and pull_request.mergeable_state == "clean":
+                found_mergeable_pull_request = True
                 try:
                     pull_request.merge(delete_branch=True)
-                    print(f"#{pull_request} merged successfully.")
+                    info("#%s merged successfully.", pull_request)
                     break
                 except UnknownObjectException:
                     active_pulls = self.github.get_user(self.username).get_repo(self.repository).get_pulls()
                     if pull_request in active_pulls:
-                        print(f"#{pull_request} could not be merged automatically. Proceeding with next pull request.")
+                        warning("#%s could not be merged automatically. "
+                                       "Proceeding with next pull request.", pull_request)
                         continue
-                    print(f"#{pull_request} merged successfully, "
-                          f"but experienced difficulties with branch deletion.")
-                    break
-            print(f"Pull request #{pull_request.number} status is {pull_request.mergeable_state}.")
+                    info("#%s merged successfully, "
+                                "but experienced difficulties with branch deletion.", pull_request)
+                    exit(110)
+            info("Pull request #%s status is %s.", pull_request.number, pull_request.mergeable_state)
+        if not found_mergeable_pull_request:
+            exit(120)
 
     @staticmethod
     def _update_reviewers(pull_request):
@@ -62,6 +69,7 @@ class MergeBot:
 
 
 if __name__ == "__main__":
+    basicConfig(level=INFO)
     parser = ArgumentParser()
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--create", help="Create pull request. Usage: merge_bot.py --create [--branch] branch "
@@ -71,7 +79,6 @@ if __name__ == "__main__":
         parser.add_argument("--branch", dest="branch_name", required=True, help="Branch name")
         parser.add_argument("--base", dest="base_branch", required=True, help="Base branch")
     args = parser.parse_args()
-
     merge_bot_api = MergeBot()
     if args.create:
         merge_bot_api.create_pull_request(args.branch_name, args.base_branch)
