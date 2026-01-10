@@ -30,7 +30,7 @@ pipeline {
             steps {
                 script {
                     sh "curl -OL https://raw.githubusercontent.com/mcieciora/CarelessVaquita/refs/heads/${BRANCH_TO_USE}/.tools_config"
-                    def BRANCH_REV = BRANCH_TO_USE.equals("develop") || BRANCH_TO_USE.equals("master") ? "HEAD^1" : "develop"
+                    def BRANCH_REV = BRANCH_TO_USE.equals("develop") || BRANCH_TO_USE.equals("master") ? "HEAD^1" : "origin/develop"
                     withEnv(getConfig(".tools_config")) {
                         withCredentials([sshUserPrivateKey(credentialsId: "agent_${NODE_NAME}", keyFileVariable: "key")]) {
                             sh 'GIT_SSH_COMMAND="ssh -i $key"'
@@ -355,28 +355,15 @@ pipeline {
                             withCredentials([sshUserPrivateKey(credentialsId: "agent_${NODE_NAME}", keyFileVariable: "key")]) {
                                 sh 'GIT_SSH_COMMAND="ssh -i $key"'
                                 sh "git tag -a $TAG_NAME -m $TAG_NAME && git push origin $TAG_NAME"
-<<<<<<< HEAD
-
-                                withEnv(getConfig(".credentials")) {
-                                    sh """
-                                    curl -X POST https://api.github.com/repos/mcieciora/CarelessVaquita/releases \\
-=======
                                 withEnv(getConfig(".credentials")) {
                                     sh """
                                     curl -X POST ${GITHUB_API_URL} \\
->>>>>>> 67cd449 (10012026-2102)
                                     -H "Authorization: token ${GITHUB_API_TOKEN}" \\
                                     -H "Accept: application/vnd.github+json" \\
                                     -H "Content-Type: application/json" \\
                                     -d '{
                                       "tag_name": "${TAG_NAME}",
-<<<<<<< HEAD
-                                      "name": "Release ${TAG_NAME}",
-                                      "body": "Release ${TAG_NAME} created via API",
-=======
                                       "name": "${RELEASE_DESC}",
-                                      "body": "${RELEASE_DESC}",
->>>>>>> 67cd449 (10012026-2102)
                                       "draft": false,
                                       "prerelease": false
                                     }'

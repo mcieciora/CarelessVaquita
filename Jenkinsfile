@@ -22,7 +22,7 @@ pipeline {
             steps {
                 script {
                     sh "curl -OL https://raw.githubusercontent.com/mcieciora/CarelessVaquita/refs/heads/${BRANCH_TO_USE}/.tools_config"
-                    def BRANCH_REV = BRANCH_TO_USE.equals("develop") || BRANCH_TO_USE.equals("master") ? "HEAD^1" : "develop"
+                    def BRANCH_REV = BRANCH_TO_USE.equals("develop") || BRANCH_TO_USE.equals("master") ? "HEAD^1" : "origin/develop"
                     withEnv(getConfig(".tools_config")) {
                         withCredentials([sshUserPrivateKey(credentialsId: "agent_${NODE_NAME}", keyFileVariable: "key")]) {
                             sh 'GIT_SSH_COMMAND="ssh -i $key"'
