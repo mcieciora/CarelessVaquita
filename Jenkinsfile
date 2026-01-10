@@ -333,30 +333,29 @@ pipeline {
                         }
                     }
                 }
-                stage ("Push tag") {
+                stage ("Push tags") {
                     when {
                         allOf {
-                            expression {BRANCH_TO_USE == "master"}
+                            expression {BRANCH_TO_USE == "master" || BRANCH_TO_USE == "develop"}
                             expression {IS_NIGHTLY.toBoolean() == false}
                         }
                     }
                     steps {
                         script {
                             def TAG_NAME = "${BRANCH_TO_USE}-${curDate}"
+                            def RELEASE_DESC = BRANCH_TO_USE == "master" ? "Stable ${TAG_NAME}" : "Dev ${TAG_NAME}"
                             withCredentials([sshUserPrivateKey(credentialsId: "agent_${NODE_NAME}", keyFileVariable: "key")]) {
                                 sh 'GIT_SSH_COMMAND="ssh -i $key"'
                                 sh "git tag -a $TAG_NAME -m $TAG_NAME && git push origin $TAG_NAME"
-
                                 withEnv(getConfig(".credentials")) {
                                     sh """
-                                    curl -X POST https://api.github.com/repos/mcieciora/CarelessVaquita/releases \\
+                                    curl -X POST ${GITHUB_API_URL} \\
                                     -H "Authorization: token ${GITHUB_API_TOKEN}" \\
                                     -H "Accept: application/vnd.github+json" \\
                                     -H "Content-Type: application/json" \\
                                     -d '{
                                       "tag_name": "${TAG_NAME}",
-                                      "name": "Release ${TAG_NAME}",
-                                      "body": "Release ${TAG_NAME} created via API",
+                                      "name": "${RELEASE_DESC}",
                                       "draft": false,
                                       "prerelease": false
                                     }'
