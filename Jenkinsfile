@@ -60,12 +60,12 @@ pipeline {
                                         sh "docker push ${DOCKERHUB_REPO}:test_image"
                                     }
                                 }
-                                else {
-                                    withEnv(getConfig(".credentials")) {
-                                        sh "docker tag test_image ${REGISTRY_URL}/${DOCKERHUB_REPO}:test_image"
-                                        sh "docker push ${REGISTRY_URL}/${DOCKERHUB_REPO}:test_image"
-                                    }
-                                }
+//                                 else {
+//                                     withEnv(getConfig(".credentials")) {
+//                                         sh "docker tag test_image ${REGISTRY_URL}/${DOCKERHUB_REPO}:test_image"
+//                                         sh "docker push ${REGISTRY_URL}/${DOCKERHUB_REPO}:test_image"
+//                                     }
+//                                 }
                             }
                         }
                     }
@@ -88,12 +88,12 @@ pipeline {
                                         sh "docker push ${DOCKERHUB_REPO}:merge_bot"
                                     }
                                 }
-                                else {
-                                    withEnv(getConfig(".credentials")) {
-                                        sh "docker tag merge_bot_image ${REGISTRY_URL}/${DOCKERHUB_REPO}:merge_bot"
-                                        sh "docker push ${REGISTRY_URL}/${DOCKERHUB_REPO}:merge_bot"
-                                    }
-                                }
+//                                 else {
+//                                     withEnv(getConfig(".credentials")) {
+//                                         sh "docker tag merge_bot_image ${REGISTRY_URL}/${DOCKERHUB_REPO}:merge_bot"
+//                                         sh "docker push ${REGISTRY_URL}/${DOCKERHUB_REPO}:merge_bot"
+//                                     }
+//                                 }
                             }
                         }
                     }
