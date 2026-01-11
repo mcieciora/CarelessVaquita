@@ -48,7 +48,7 @@ def test__smoke__cli_divide_by_zero():
 @mark.smoke
 def test__smoke__cli_invalid_operation_error():
     actual_value = run_cli(["mod", "5", "2"])
-    assert 1 == actual_value.returncode
+    assert 2 == actual_value.returncode
     assert ("error: argument operation: invalid choice: 'mod' (choose from add, subtract, multiply, divide)"
             in actual_value.stderr)
 
