@@ -1,5 +1,5 @@
 from pytest import mark, raises
-from src.main import Calculator
+from src.main import Calculator, main
 
 
 @mark.unittest
@@ -80,6 +80,11 @@ def test__unittest__divide_mixed_sign():
 @mark.unittest
 def test__unittest__divide_result_decimal():
     assert Calculator.divide(7, 2) == 3.5
+
+
+@mark.unittest
+def test__unittest__run_main():
+    main(["add", "1", "1"])
 
 
 @mark.unittest
