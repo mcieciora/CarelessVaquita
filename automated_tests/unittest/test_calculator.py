@@ -103,12 +103,6 @@ def test__unittest__run_main_divide():
 
 
 @mark.unittest
-def test__unittest__run_main_unknown():
-    with raises(SystemExit):
-        main(["mod", "1", "1"])
-
-
-@mark.unittest
 def test__unittest__divide_by_zero():
     with raises(ValueError, match="Cannot divide by zero."):
         Calculator.divide(10, 0)

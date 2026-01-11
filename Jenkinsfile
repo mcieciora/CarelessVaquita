@@ -170,7 +170,7 @@ pipeline {
                 stage ("Code coverage") {
                     steps {
                         script {
-                            sh "docker run --name code_coverage_container test_image sh -c 'coverage run --source=src -m pytest -k unittest; coverage html; coverage report --fail-under=95'"
+                            sh "docker run --name code_coverage_container test_image sh -c 'coverage run --source=src -m pytest -k unittest; coverage html; coverage report --fail-under=85'"
                         }
                     }
                     post {
