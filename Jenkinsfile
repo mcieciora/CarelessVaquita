@@ -289,6 +289,7 @@ pipeline {
                         }
                         post {
                             always {
+                                sh "docker container cp ${TEST_GROUP}_test:/app/results ./"
                                 sh "docker rm ${TEST_GROUP}_test"
                                 archiveArtifacts artifacts: "**/${TEST_GROUP}_results.xml"
                             }
