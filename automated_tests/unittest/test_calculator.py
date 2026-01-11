@@ -1,47 +1,88 @@
-# test_calculator_cli.py
-
-import pytest
-from src.main import main
+from pytest import mark, raises
+from src.main import Calculator
 
 
-def run_cli(args, capsys):
-    """Helper function to run CLI and capture output."""
-    with pytest.raises(SystemExit) as e:
-        main(args)
-    return e.value.code, capsys.readouterr()
+@mark.unittest
+def test__unittest__add_positive_numbers():
+    assert Calculator.add(3, 5) == 8
 
 
-# --- Valid operations ---
-def test_cli_add(capsys):
-    exit_code, out = run_cli(["add", "4", "5"], capsys)
-    assert exit_code == 0 or exit_code is None
-    assert "Result: 9.0" in out.out
-
-def test_cli_subtract(capsys):
-    exit_code, out = run_cli(["subtract", "10", "3"], capsys)
-    assert "Result: 7.0" in out.out
-
-def test_cli_multiply(capsys):
-    exit_code, out = run_cli(["multiply", "6", "7"], capsys)
-    assert "Result: 42.0" in out.out
-
-def test_cli_divide(capsys):
-    exit_code, out = run_cli(["divide", "10", "2"], capsys)
-    assert "Result: 5.0" in out.out
+@mark.unittest
+def test__unittest__add_negative_numbers():
+    assert Calculator.add(-3, -7) == -10
 
 
-# --- Error handling ---
-def test_cli_divide_by_zero(capsys):
-    exit_code, out = run_cli(["divide", "10", "0"], capsys)
-    assert exit_code == 1
-    assert "Error: Cannot divide by zero." in out.err
-
-def test_cli_invalid_operation(capsys):
-    with pytest.raises(SystemExit):
-        main(["mod", "5", "2"])  # argparse will exit on invalid choice
+@mark.unittest
+def test__unittest__add_mixed_sign():
+    assert Calculator.add(-3, 7) == 4
 
 
-# --- CLI argument validation ---
-def test_cli_missing_arguments(capsys):
-    with pytest.raises(SystemExit):
-        main(["add", "5"])  # missing one argument
+@mark.unittest
+def test__unittest__add_zero():
+    assert Calculator.add(0, 10) == 10
+
+
+@mark.unittest
+def test__unittest__subtract_positive_numbers():
+    assert Calculator.subtract(10, 3) == 7
+
+
+@mark.unittest
+def test__unittest__subtract_negative_numbers():
+    assert Calculator.subtract(-5, -2) == -3
+
+
+@mark.unittest
+def test__unittest__subtract_to_zero():
+    assert Calculator.subtract(4, 4) == 0
+
+
+@mark.unittest
+def test__unittest__subtract_mixed_sign():
+    assert Calculator.subtract(4, -5) == 9
+
+
+@mark.unittest
+def test__unittest__multiply_positive_numbers():
+    assert Calculator.multiply(4, 5) == 20
+
+
+@mark.unittest
+def test__unittest__multiply_negative_numbers():
+    assert Calculator.multiply(-3, -6) == 18
+
+
+@mark.unittest
+def test__unittest__multiply_mixed_sign():
+    assert Calculator.multiply(-4, 5) == -20
+
+
+@mark.unittest
+def test__unittest__multiply_by_zero():
+    assert Calculator.multiply(10, 0) == 0
+
+
+@mark.unittest
+def test__unittest__divide_positive_numbers():
+    assert Calculator.divide(10, 2) == 5
+
+
+@mark.unittest
+def test__unittest__divide_negative_numbers():
+    assert Calculator.divide(-9, -3) == 3
+
+
+@mark.unittest
+def test__unittest__divide_mixed_sign():
+    assert Calculator.divide(-8, 2) == -4
+
+
+@mark.unittest
+def test__unittest__divide_result_decimal():
+    assert Calculator.divide(7, 2) == 3.5
+
+
+@mark.unittest
+def test__unittest__divide_by_zero():
+    with raises(ValueError, match="Cannot divide by zero."):
+        Calculator.divide(10, 0)

@@ -5,3 +5,4 @@ ruff==0.14.11
 bandit==1.9.2
 radon==6.0.1
 mypy==1.19.1
+click==8.3.1

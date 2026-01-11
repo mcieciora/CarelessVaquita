@@ -1,60 +1,60 @@
-# test_calculator.py
-
-import pytest
-from src.main import Calculator
-
-# --- Addition Tests ---
-def test_add_positive_numbers():
-    assert Calculator.add(3, 5) == 8
-
-def test_add_negative_numbers():
-    assert Calculator.add(-3, -7) == -10
-
-def test_add_mixed_sign():
-    assert Calculator.add(-3, 7) == 4
-
-def test_add_zero():
-    assert Calculator.add(0, 10) == 10
+from subprocess import run
+from sys import executable
+from pytest import mark
 
 
-# --- Subtraction Tests ---
-def test_subtract_positive_numbers():
-    assert Calculator.subtract(10, 3) == 7
-
-def test_subtract_negative_numbers():
-    assert Calculator.subtract(-5, -2) == -3
-
-def test_subtract_to_zero():
-    assert Calculator.subtract(4, 4) == 0
-
-
-# --- Multiplication Tests ---
-def test_multiply_positive_numbers():
-    assert Calculator.multiply(4, 5) == 20
-
-def test_multiply_negative_numbers():
-    assert Calculator.multiply(-3, -6) == 18
-
-def test_multiply_mixed_sign():
-    assert Calculator.multiply(-4, 5) == -20
-
-def test_multiply_by_zero():
-    assert Calculator.multiply(10, 0) == 0
+def run_cli(args):
+    """Helper function to run CLI and capture output."""
+    cli_arguments = [executable, "src/main.py"]
+    cli_arguments.extend(args)
+    result = run(
+        cli_arguments,
+        capture_output=True, text=True, timeout=5
+    )
+    return result
 
 
-# --- Division Tests ---
-def test_divide_positive_numbers():
-    assert Calculator.divide(10, 2) == 5
+@mark.smoke
+def test_cli_add():
+    actual_value = run_cli(["add", "4", "5"])
+    assert "9.0" in actual_value.stdout
 
-def test_divide_negative_numbers():
-    assert Calculator.divide(-9, -3) == 3
 
-def test_divide_mixed_sign():
-    assert Calculator.divide(-8, 2) == -4
+@mark.smoke
+def test_cli_subtract():
+    actual_value = run_cli(["subtract", "10", "3"])
+    assert "7.0" in actual_value.stdout
 
-def test_divide_result_decimal():
-    assert Calculator.divide(7, 2) == 3.5
 
-def test_divide_by_zero():
-    with pytest.raises(ValueError, match="Cannot divide by zero."):
-        Calculator.divide(10, 0)
+@mark.smoke
+def test_cli_multiply():
+    actual_value = run_cli(["multiply", "6", "7"])
+    assert "42.0" in actual_value.stdout
+
+
+@mark.smoke
+def test_cli_divide():
+    actual_value = run_cli(["divide", "10", "2"])
+    assert "5.0" in actual_value.stdout
+
+
+@mark.smoke
+def test_cli_divide_by_zero():
+    actual_value = run_cli(["divide", "10", "0"])
+    assert 1 == actual_value.returncode
+    assert "Error: Cannot divide by zero." in actual_value.stderr
+
+
+@mark.smoke
+def test_cli_invalid_operation():
+    actual_value = run_cli(["mod", "5", "2"])
+    assert 2 == actual_value.returncode
+    assert ("error: argument operation: invalid choice: 'mod' (choose from 'add', 'subtract', 'multiply', 'divide')"
+            in actual_value.stderr)
+
+
+@mark.smoke
+def test_cli_missing_arguments():
+    actual_value = run_cli(["add", "5"])
+    assert 2 == actual_value.returncode
+    assert "error: the following arguments are required: b" in actual_value.stderr

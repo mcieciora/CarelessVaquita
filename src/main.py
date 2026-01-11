@@ -69,7 +69,7 @@ def main(argv=None):
         else:
             parser.error("Unknown operation")
 
-        print(f"Result: {result}")
+        print(f"{result}")
 
     except ValueError as e:
         print(f"Error: {e}", file=sys.stderr)
