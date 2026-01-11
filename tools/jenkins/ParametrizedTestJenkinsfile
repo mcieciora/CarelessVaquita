@@ -8,7 +8,7 @@ pipeline {
     }
     parameters {
         choice(name: "FLAG", choices: ["unittest", "smoke", "regression", "nightly"], description: "Choose test flag.")
-        choice(name: "TEST_GROUP", choices: ["all", "google"], description: "Choose test group.")
+        choice(name: "TEST_GROUP", choices: ["all", "add", "subtract", "multiply", "divide", "error"], description: "Choose test group.")
         booleanParam(name: "REGULAR_BUILD", defaultValue: true, description: "If true code linters and staging will be executed too.")
         string(name: "BRANCH", defaultValue: "develop", description: "Execution branch.")
         booleanParam(name: "FORCE_BUILD", defaultValue: false, description: "Force Docker to build test_image.")
@@ -264,7 +264,7 @@ pipeline {
             steps {
                 script {
                     sh "chmod +x tools/shell_scripts/app_health_check.sh"
-                    sh "tools/shell_scripts/app_health_check.sh 30 1"
+                    sh "tools/shell_scripts/app_health_check.sh 10 1"
                 }
             }
             post {
@@ -278,7 +278,7 @@ pipeline {
                 axes {
                     axis {
                         name "TEST_GROUP"
-                        values "google"
+                        values "add", "subtract", "multiply", "divide", "error"
                     }
                 }
                 stages {

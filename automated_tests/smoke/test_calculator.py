@@ -46,7 +46,7 @@ def test_cli_divide_by_zero():
 
 
 @mark.smoke
-def test_cli_invalid_operation():
+def test_cli_invalid_operation_error():
     actual_value = run_cli(["mod", "5", "2"])
     assert 2 == actual_value.returncode
     assert ("error: argument operation: invalid choice: 'mod' (choose from 'add', 'subtract', 'multiply', 'divide')"
@@ -54,7 +54,7 @@ def test_cli_invalid_operation():
 
 
 @mark.smoke
-def test_cli_missing_arguments():
+def test_cli_missing_arguments_error():
     actual_value = run_cli(["add", "5"])
     assert 2 == actual_value.returncode
     assert "error: the following arguments are required: b" in actual_value.stderr

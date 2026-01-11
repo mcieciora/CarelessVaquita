@@ -256,7 +256,7 @@ pipeline {
             steps {
                 script {
                     sh "chmod +x tools/shell_scripts/app_health_check.sh"
-                    sh "tools/shell_scripts/app_health_check.sh 30 1"
+                    sh "tools/shell_scripts/app_health_check.sh 10 1"
                 }
             }
             post {
@@ -270,7 +270,7 @@ pipeline {
                 axes {
                     axis {
                         name "TEST_GROUP"
-                        values "google"
+                        values "add", "subtract", "multiply", "divide", "error"
                     }
                 }
                 stages {
