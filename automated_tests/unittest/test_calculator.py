@@ -83,8 +83,29 @@ def test__unittest__divide_result_decimal():
 
 
 @mark.unittest
-def test__unittest__run_main():
+def test__unittest__run_main_add():
     main(["add", "1", "1"])
+
+
+@mark.unittest
+def test__unittest__run_main_subtract():
+    main(["subtract", "1", "1"])
+
+
+@mark.unittest
+def test__unittest__run_main_multiply():
+    main(["multiply", "1", "1"])
+
+
+@mark.unittest
+def test__unittest__run_main_divide():
+    main(["divide", "1", "1"])
+
+
+@mark.unittest
+def test__unittest__run_main_unknown():
+    with raises(SystemExit):
+        main(["mod", "1", "1"])
 
 
 @mark.unittest
