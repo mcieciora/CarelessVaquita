@@ -353,22 +353,13 @@ pipeline {
                         script {
                             def TAG_NAME = "${BRANCH_TO_USE}-${curDate}"
                             def RELEASE_DESC = BRANCH_TO_USE == "master" ? "Stable ${TAG_NAME}" : "Dev ${TAG_NAME}"
+                            def PRE_RELEASE_VALUE = "master" ? "false" : "true"
                             withCredentials([sshUserPrivateKey(credentialsId: "agent_${NODE_NAME}", keyFileVariable: "key")]) {
                                 sh 'GIT_SSH_COMMAND="ssh -i $key"'
                                 sh "git tag -a $TAG_NAME -m $TAG_NAME && git push origin $TAG_NAME"
                                 withEnv(getConfig(".credentials")) {
-                                    sh """
-                                    curl -X POST ${GITHUB_API_URL} \\
-                                    -H "Authorization: token ${GITHUB_API_TOKEN}" \\
-                                    -H "Accept: application/vnd.github+json" \\
-                                    -H "Content-Type: application/json" \\
-                                    -d '{
-                                      "tag_name": "${TAG_NAME}",
-                                      "name": "${RELEASE_DESC}",
-                                      "draft": false,
-                                      "prerelease": false
-                                    }'
-                                    """
+                                    sh "chmod +x tools/shell_scripts/push_github_tags.sh"
+                                    sh "tools/shell_scripts/push_github_tags.sh ${TAG_NAME} ${RELEASE_DESC} ${PRE_RELEASE_VALUE}"
                                 }
                             }
                         }
