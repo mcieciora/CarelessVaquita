@@ -393,13 +393,15 @@ pipeline {
                 reportFiles: "index.html",
                 reportName: "PyTestCov"
             ]
-            cleanWs()
         }
         failure {
             withEnv(getConfig(".credentials")) {
                 sh "chmod +x tools/shell_scripts/pr_check_status.sh"
                 sh "tools/shell_scripts/pr_check_status.sh ${BRANCH_TO_USE} failure"
             }
+        }
+        cleanup {
+            cleanWs()
         }
     }
 }
