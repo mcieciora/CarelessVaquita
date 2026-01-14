@@ -37,6 +37,11 @@ pipeline {
                                           returnStatus: true)
                     build_merge_bot_image = sh(script: "git diff --name-only \$(git rev-parse HEAD) \$(git rev-parse ${BRANCH_REV}) | grep -e required_reviewers -e src -e requirements/merge_bot -e tools/python/merge_bot.py -e tools/merge_bot/Dockerfile",
                                           returnStatus: true)
+
+                    withEnv(getConfig(".credentials")) {
+                        sh "chmod +x tools/shell_scripts/pr_check_status.sh"
+                        sh "tools/shell_scripts/pr_check_status.sh ${BRANCH_TO_USE} pending"
+                    }
                 }
             }
         }
@@ -305,6 +310,21 @@ pipeline {
                 }
             }
             parallel {
+                stage ("Update PR status") {
+                    when {
+                        expression {
+                            return BRANCH_TO_USE.contains("feature") || BRANCH_TO_USE.contains("release")
+                        }
+                    }
+                    steps {
+                        script {
+                            withEnv(getConfig(".credentials")) {
+                                sh "chmod +x tools/shell_scripts/pr_check_status.sh"
+                                sh "tools/shell_scripts/pr_check_status.sh ${BRANCH_TO_USE} success"
+                            }
+                        }
+                    }
+                }
                 stage ("Push docker image") {
                     when {
                         allOf {
@@ -345,22 +365,13 @@ pipeline {
                         script {
                             def TAG_NAME = "${BRANCH_TO_USE}-${curDate}"
                             def RELEASE_DESC = BRANCH_TO_USE == "master" ? "Stable ${TAG_NAME}" : "Dev ${TAG_NAME}"
+                            def PRE_RELEASE_VALUE = "master" ? "false" : "true"
                             withCredentials([sshUserPrivateKey(credentialsId: "agent_${NODE_NAME}", keyFileVariable: "key")]) {
                                 sh 'GIT_SSH_COMMAND="ssh -i $key"'
                                 sh "git tag -a $TAG_NAME -m $TAG_NAME && git push origin $TAG_NAME"
                                 withEnv(getConfig(".credentials")) {
-                                    sh """
-                                    curl -X POST ${GITHUB_API_URL} \\
-                                    -H "Authorization: token ${GITHUB_API_TOKEN}" \\
-                                    -H "Accept: application/vnd.github+json" \\
-                                    -H "Content-Type: application/json" \\
-                                    -d '{
-                                      "tag_name": "${TAG_NAME}",
-                                      "name": "${RELEASE_DESC}",
-                                      "draft": false,
-                                      "prerelease": false
-                                    }'
-                                    """
+                                    sh "chmod +x tools/shell_scripts/push_github_tags.sh"
+                                    sh "tools/shell_scripts/push_github_tags.sh ${TAG_NAME} ${RELEASE_DESC} ${PRE_RELEASE_VALUE}"
                                 }
                             }
                         }
@@ -382,6 +393,14 @@ pipeline {
                 reportFiles: "index.html",
                 reportName: "PyTestCov"
             ]
+        }
+        failure {
+            withEnv(getConfig(".credentials")) {
+                sh "chmod +x tools/shell_scripts/pr_check_status.sh"
+                sh "tools/shell_scripts/pr_check_status.sh ${BRANCH_TO_USE} failure"
+            }
+        }
+        cleanup {
             cleanWs()
         }
     }
