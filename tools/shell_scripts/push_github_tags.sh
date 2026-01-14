@@ -4,6 +4,8 @@ TAG_NAME=$1
 RELEASE_DESC=$2
 PRE_RELEASE_VALUE=false
 
+echo "{\"tag_name\":\"$TAG_NAME\", \"name\":\"$RELEASE_DESC\", \"prerelease\": $PRE_RELEASE_VALUE, \"make_latest\": $PRE_RELEASE_VALUE}"
+
 curl -X POST "https://api.github.com/repos/$GITHUB_REPO_OWNER/$GITHUB_REPO_NAME/releases" \
   -H "Authorization: token $GITHUB_API_TOKEN" \
   -H "Accept: application/vnd.github+json" \
