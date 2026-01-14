@@ -1,8 +1,8 @@
 #!/bin/bash
 
-TAG_NAME="$1"
-RELEASE_DESC="$2"
-PRE_RELEASE_VALUE="$3"
+TAG_NAME=$1
+RELEASE_DESC=$2
+PRE_RELEASE_VALUE=$3
 
 curl -X POST "https://api.github.com/repos/$GITHUB_REPO_OWNER/$GITHUB_REPO_NAME/releases" \
   -H "Authorization: token $GITHUB_API_TOKEN" \
@@ -11,8 +11,8 @@ curl -X POST "https://api.github.com/repos/$GITHUB_REPO_OWNER/$GITHUB_REPO_NAME/
   -d "{
     \"tag_name\": \"$TAG_NAME\",
     \"name\": \"$RELEASE_DESC\",
-    \"prerelease\": \"$PRE_RELEASE_VALUE\",
-    \"make_latest\": \"$PRE_RELEASE_VALUE\"
+    \"prerelease\": $PRE_RELEASE_VALUE,
+    \"make_latest\": $PRE_RELEASE_VALUE
   }"
 
 RETURN_CODE=$?
