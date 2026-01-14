@@ -11,7 +11,7 @@ class MergeBot:
 
     def __init__(self):
         self.github = Github(auth=Auth.Token(environ["GITHUB_API_TOKEN"]))
-        self.username = environ["GITHUB_USER"]
+        self.username = environ["GITHUB_REPO_OWNER"]
         self.repository = environ["GITHUB_REPO"]
         self.bot_name = environ["GITHUB_BOT"]
 
