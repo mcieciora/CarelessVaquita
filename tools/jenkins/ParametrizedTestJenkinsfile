@@ -379,7 +379,7 @@ pipeline {
                                 sh "git tag -a $TAG_NAME -m $TAG_NAME && git push origin $TAG_NAME"
                                 withEnv(getConfig(".credentials")) {
                                     sh "chmod +x tools/shell_scripts/push_github_tags.sh"
-                                    sh "tools/shell_scripts/push_github_tags.sh ${TAG_NAME} '${RELEASE_DESC}' ${PRE_RELEASE_VALUE}"
+                                    sh "tools/shell_scripts/push_github_tags.sh ${TAG_NAME} ${RELEASE_DESC} ${PRE_RELEASE_VALUE}"
                                 }
                             }
                         }
