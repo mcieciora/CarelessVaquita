@@ -45,6 +45,11 @@ pipeline {
                                           returnStatus: true)
                     build_merge_bot_image = sh(script: "git diff --name-only \$(git rev-parse HEAD) \$(git rev-parse ${BRANCH_REV}) | grep -e required_reviewers -e src -e requirements/merge_bot -e tools/python/merge_bot.py -e tools/merge_bot/Dockerfile",
                                           returnStatus: true)
+
+                    withEnv(getConfig(".credentials")) {
+                        sh "chmod +x tools/shell_scripts/pr_check_status.sh"
+                        sh "tools/shell_scripts/pr_check_status.sh ${BRANCH_TO_USE} pending"
+                    }
                 }
             }
         }
@@ -365,6 +370,21 @@ pipeline {
                         }
                     }
                 }
+                stage ("Update PR status") {
+                    when {
+                        expression {
+                            return BRANCH_TO_USE.contains("feature") || BRANCH_TO_USE.contains("release")
+                        }
+                    }
+                    steps {
+                        script {
+                            withEnv(getConfig(".credentials")) {
+                                sh "chmod +x tools/shell_scripts/pr_check_status.sh"
+                                sh "tools/shell_scripts/pr_check_status.sh ${BRANCH_TO_USE} success"
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -382,6 +402,12 @@ pipeline {
                 reportName: "PyTestCov"
             ]
             cleanWs()
+        }
+        failure {
+            withEnv(getConfig(".credentials")) {
+                sh "chmod +x tools/shell_scripts/pr_check_status.sh"
+                sh "tools/shell_scripts/pr_check_status.sh ${BRANCH_TO_USE} failure"
+            }
         }
     }
 }

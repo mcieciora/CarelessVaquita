@@ -5,7 +5,7 @@ STATE=$2
 
 CONTEXT="ci/pipeline-passed"
 DESCRIPTION="All checks passed"
-TARGET_URL="https://github.com/mcieciora/CarelessVaquita"
+TARGET_URL="https://github.com/mcieciora/CarelessVaquita/pulls"
 
 PR_NUMBER=$(curl -s -H "Authorization: Bearer $GITHUB_API_TOKEN" \
   "https://api.github.com/repos/$GITHUB_REPO_OWNER/$GITHUB_REPO_NAME/pulls?head=$GITHUB_REPO_OWNER:$BRANCH&state=open" \
