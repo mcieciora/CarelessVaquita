@@ -1,8 +1,5 @@
 #!/bin/bash
 
-DOCKERHUB_REPO=mcieciora/careless_vaquita
-REGISTRY_URL=192.168.101.15:5000
-
 CURRENT_DATE=$(date +%s)
 echo "CURRENT_DATE: $CURRENT_DATE"
 
