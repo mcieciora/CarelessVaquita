@@ -310,6 +310,21 @@ pipeline {
                 }
             }
             parallel {
+                stage ("Update PR status") {
+                    when {
+                        expression {
+                            return BRANCH_TO_USE.contains("feature") || BRANCH_TO_USE.contains("release")
+                        }
+                    }
+                    steps {
+                        script {
+                            withEnv(getConfig(".credentials")) {
+                                sh "chmod +x tools/shell_scripts/pr_check_status.sh"
+                                sh "tools/shell_scripts/pr_check_status.sh ${BRANCH_TO_USE} success"
+                            }
+                        }
+                    }
+                }
                 stage ("Push docker image") {
                     when {
                         allOf {
@@ -358,21 +373,6 @@ pipeline {
                                     sh "chmod +x tools/shell_scripts/push_github_tags.sh"
                                     sh "tools/shell_scripts/push_github_tags.sh ${TAG_NAME} ${RELEASE_DESC} ${PRE_RELEASE_VALUE}"
                                 }
-                            }
-                        }
-                    }
-                }
-                stage ("Update PR status") {
-                    when {
-                        expression {
-                            return BRANCH_TO_USE.contains("feature") || BRANCH_TO_USE.contains("release")
-                        }
-                    }
-                    steps {
-                        script {
-                            withEnv(getConfig(".credentials")) {
-                                sh "chmod +x tools/shell_scripts/pr_check_status.sh"
-                                sh "tools/shell_scripts/pr_check_status.sh ${BRANCH_TO_USE} success"
                             }
                         }
                     }
