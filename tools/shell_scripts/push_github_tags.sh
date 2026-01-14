@@ -8,8 +8,7 @@ curl -X POST "https://api.github.com/repos/$GITHUB_REPO_OWNER/$GITHUB_REPO_NAME/
   -H "Authorization: token $GITHUB_API_TOKEN" \
   -H "Accept: application/vnd.github+json" \
   -H "Content-Type: application/json" \
-  -d "{\"tag_name\":\"$TAG_NAME\", \"name\":\"$RELEASE_DESC\", \"prerelease\": $PRE_RELEASE_VALUE, \"make_latest\": $PRE_RELEASE_VALUE}" \
-  -d @json_data.json
+  -d "{\"tag_name\":\"$TAG_NAME\", \"name\":\"$RELEASE_DESC\", \"prerelease\": $PRE_RELEASE_VALUE, \"make_latest\": $PRE_RELEASE_VALUE}"
 
 RETURN_CODE=$?
 
