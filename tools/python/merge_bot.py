@@ -36,6 +36,11 @@ class MergeBot:
 
         :return: None
         """
+        # find all pull requests
+        # divide them into two groups ready_to_merge and active
+        # if ready_to_merge is empty then raise 100:info("No active pull requests.")
+        # else go through the list and check if pull requests may conflict each other
+
         active_pulls = self.github.get_user(self.username).get_repo(self.repository).get_pulls()
         found_mergeable_pull_request = False
         if not list(active_pulls):
@@ -48,7 +53,7 @@ class MergeBot:
             if pull_request.mergeable and pull_request.mergeable_state == "clean":
                 found_mergeable_pull_request = True
                 try:
-                    pull_request.merge(delete_branch=True)
+                    pull_request.merge()
                     info("#%s merged successfully.", pull_request)
                     break
                 except UnknownObjectException:
