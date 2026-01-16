@@ -12,7 +12,7 @@ class MergeBot:
     def __init__(self):
         self.github = Github(auth=Auth.Token(environ["GITHUB_API_TOKEN"]))
         self.username = environ["GITHUB_REPO_OWNER"]
-        self.repository = environ["GITHUB_REPO"]
+        self.repository = environ["GITHUB_REPO_NAME"]
         self.bot_name = environ["GITHUB_BOT"]
 
     def create_pull_request(self, branch_name, base_branch):
@@ -36,12 +36,15 @@ class MergeBot:
 
         :return: None
         """
+
         active_pulls = self.github.get_user(self.username).get_repo(self.repository).get_pulls()
         found_mergeable_pull_request = False
         if not list(active_pulls):
             info("No active pull requests.")
             exit(100)
         for pull_request in active_pulls:
+            if pull_request.head.ref.startswith("test_"):
+                continue
             if pull_request.mergeable and pull_request.mergeable_state == "clean":
                 found_mergeable_pull_request = True
                 try:
