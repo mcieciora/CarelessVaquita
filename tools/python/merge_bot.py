@@ -30,53 +30,61 @@ class MergeBot:
         self._update_reviewers(return_value)
         info("Created pull request: #%s", return_value.number)
 
-    def merge_pull_request(self):
-        """
-        Get all active pull requests with PyGitHub library.
-
-        :return: None
-        """
-        # find all pull requests
-        # divide them into two groups ready_to_merge and active
-        # if ready_to_merge is empty then raise 100:info("No active pull requests.")
-        # else go through the list and check if pull requests may conflict each other
-
-        active_pulls = self.github.get_user(self.username).get_repo(self.repository).get_pulls()
-        found_mergeable_pull_request = False
-        if not list(active_pulls):
-            info("No active pull requests.")
-            exit(100)
-        for pull_request in active_pulls:
-            if pull_request.head.ref.startswith("test_"):
-                info("Omitting %s in merge queue.", pull_request.head.ref)
-                continue
-            if pull_request.mergeable and pull_request.mergeable_state == "clean":
-                found_mergeable_pull_request = True
-                try:
-                    pull_request.merge()
-                    info("#%s merged successfully.", pull_request)
-                    break
-                except UnknownObjectException:
-                    active_pulls = self.github.get_user(self.username).get_repo(self.repository).get_pulls()
-                    if pull_request in active_pulls:
-                        warning("#%s could not be merged automatically. "
-                                       "Proceeding with next pull request.", pull_request)
-                        continue
-                    info("#%s merged successfully, "
-                                "but experienced difficulties with branch deletion.", pull_request)
-                    exit(110)
-            info("Pull request #%s status is %s.", pull_request.number, pull_request.mergeable_state)
-        if not found_mergeable_pull_request:
-            exit(120)
-
     @staticmethod
     def _update_reviewers(pull_request):
         with open("required_reviewers", mode="r", encoding="utf-8") as reviewers_file:
             reviewers = reviewers_file.readlines()
             pull_request.create_review_request(reviewers)
 
+    def merge_pull_request(self):
+        pull_requests_ready_to_merge = self.filter_pull_requests()
+        if not list(pull_requests_ready_to_merge):
+            info("No active pull requests.")
+            exit(100)
+        self.find_conflicts(pull_requests_ready_to_merge)
+
+    def find_conflicts(self, ready_to_merge_prs_list):
+        for pull_request in ready_to_merge_prs_list:
+            list_of_files = pull_request.get_files()
+        print("a")
+
+    def _merge(self, pull_request):
+        try:
+            pull_request.merge()
+            info("#%s merged successfully.", pull_request)
+        except UnknownObjectException:
+            active_pulls = self.github.get_user(self.username).get_repo(self.repository).get_pulls()
+            if pull_request in active_pulls:
+                warning("#%s could not be merged automatically. "
+                        "Proceeding with next pull request.", pull_request)
+            info("#%s merged successfully, "
+                 "but experienced difficulties with branch deletion.", pull_request)
+            exit(110)
+
+    def filter_pull_requests(self):
+        """
+        Filter active pull requests list to find ones ready to merge.
+
+        :return: List of PullRequest objects.
+        """
+        ready_to_merge_prs_list = []
+        active_pulls = self.github.get_user(self.username).get_repo(self.repository).get_pulls()
+        for pull_request in active_pulls:
+            # if pull_request.head.ref.startswith("test_"):
+            #     info("Omitting %s in merge queue.", pull_request.head.ref)
+            #     continue
+            if pull_request.mergeable and pull_request.mergeable_state == "clean":
+                info("#%s was accepted by the filter.", pull_request.number)
+                ready_to_merge_prs_list.append(pull_request)
+            else:
+                info("#%s was rejected by the filter.", pull_request.number)
+        return ready_to_merge_prs_list
+
 
 if __name__ == "__main__":
+    from dotenv import load_dotenv
+    load_dotenv(".credentials")
+
     basicConfig(level=INFO)
     parser = ArgumentParser()
     group = parser.add_mutually_exclusive_group(required=True)
