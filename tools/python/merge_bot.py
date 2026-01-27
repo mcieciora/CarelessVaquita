@@ -47,7 +47,7 @@ class MergeBot:
             pull_request.create_review_request(reviewers)
 
     def merge_pull_requests(self):
-        files_counter = self.filter_pull_requests()
+        files_counter = Counter(self.filter_pull_requests())
         if not list(self.candidates):
             info("No active pull requests.")
             exit(100)
@@ -84,9 +84,6 @@ class MergeBot:
         active_pulls = self.github.get_user(self.username).get_repo(self.repository).get_pulls()
         all_files = []
         for pull_request in active_pulls:
-            # if pull_request.head.ref.startswith("test_"):
-            #     info("Omitting %s in merge queue.", pull_request.head.ref)
-            #     continue
             if pull_request.mergeable and pull_request.mergeable_state == "clean":
                 info("#%s was accepted by the filter.", pull_request.number)
                 files_info = {file.filename: file.changes for file in pull_request.get_files()}
@@ -96,7 +93,7 @@ class MergeBot:
                 )
             else:
                 info("#%s was rejected by the filter.", pull_request.number)
-        return Counter(all_files)
+        return all_files
 
 
 if __name__ == "__main__":
