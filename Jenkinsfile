@@ -51,6 +51,7 @@ pipeline {
                     when {
                         anyOf {
                             expression {build_test_image == 0}
+                            expression {IS_NIGHTLY.toBoolean() == true}
                             expression {FORCE_DOCKER_IMAGE_BUILD.toBoolean() == true}
                         }
                     }
@@ -58,7 +59,7 @@ pipeline {
                         script {
                             withEnv(getConfig(".tools_config")) {
                                 sh "docker build --build-arg DEFAULT_IMAGE_TAG=${DEFAULT_IMAGE_TAG} --no-cache -t test_image -f automated_tests/Dockerfile ."
-                                if (BRANCH_TO_USE == "master" || BRANCH_TO_USE == "develop") {
+                                if (BRANCH_TO_USE == "master" || BRANCH_TO_USE == "develop" && IS_NIGHTLY.toBoolean() == false) {
                                     sh "docker tag test_image ${DOCKERHUB_REPO}:test_image"
                                     withCredentials([usernamePassword(credentialsId: "dockerhub_id", usernameVariable: "USERNAME", passwordVariable: "PASSWORD")]) {
                                         sh "docker login --username $USERNAME --password $PASSWORD"
@@ -79,6 +80,7 @@ pipeline {
                     when {
                         anyOf {
                             expression {build_merge_bot_image == 0}
+                            expression {IS_NIGHTLY.toBoolean() == true}
                             expression {FORCE_DOCKER_IMAGE_BUILD.toBoolean() == true}
                         }
                     }
@@ -86,7 +88,7 @@ pipeline {
                         script {
                             withEnv(getConfig(".tools_config")) {
                                 sh "docker build --build-arg DEFAULT_IMAGE_TAG=${DEFAULT_IMAGE_TAG} --no-cache -t merge_bot_image -f tools/merge_bot/Dockerfile ."
-                                if (BRANCH_TO_USE == "master" || BRANCH_TO_USE == "develop") {
+                                if (BRANCH_TO_USE == "master" || BRANCH_TO_USE == "develop" && IS_NIGHTLY.toBoolean() == false) {
                                     sh "docker tag merge_bot_image ${DOCKERHUB_REPO}:merge_bot"
                                     withCredentials([usernamePassword(credentialsId: "dockerhub_id", usernameVariable: "USERNAME", passwordVariable: "PASSWORD")]) {
                                         sh "docker login --username $USERNAME --password $PASSWORD"
@@ -107,6 +109,7 @@ pipeline {
                     when {
                         allOf {
                             expression {build_test_image == 1}
+                            expression {IS_NIGHTLY.toBoolean() == false}
                             expression {FORCE_DOCKER_IMAGE_BUILD.toBoolean() == false}
                         }
                     }
