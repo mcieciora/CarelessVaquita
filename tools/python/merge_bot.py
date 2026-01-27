@@ -29,7 +29,7 @@ class MergeBot:
         """
         Create pull request with PyGitHub library.
 
-        :return: None
+        :return: None.
         """
         return_value = self.github.get_user(self.username).get_repo(self.repository).create_pull(
             base=base_branch,
@@ -42,11 +42,21 @@ class MergeBot:
 
     @staticmethod
     def _update_reviewers(pull_request):
+        """
+        Update pull request required reviewers list from reviewers config.
+
+        :return: None.
+        """
         with open("required_reviewers", mode="r", encoding="utf-8") as reviewers_file:
             reviewers = reviewers_file.readlines()
             pull_request.create_review_request(reviewers)
 
     def merge_pull_requests(self):
+        """
+        Merge all the pull requests ready to merge plus one from conflicted list.
+
+        :return: None.
+        """
         files_counter = Counter(self.filter_pull_requests())
         if not list(self.candidates):
             info("No active pull requests.")
@@ -64,6 +74,11 @@ class MergeBot:
         self._merge(lowest_changes_total.pull_request)
 
     def _merge(self, pull_request):
+        """
+        Merge given pull request and verify it post state.
+
+        :return: None.
+        """
         try:
             pull_request.merge()
             info("#%s merged successfully.", pull_request)
@@ -97,9 +112,6 @@ class MergeBot:
 
 
 if __name__ == "__main__":
-    from dotenv import load_dotenv
-    load_dotenv(".credentials")
-
     basicConfig(level=INFO)
     parser = ArgumentParser()
     group = parser.add_mutually_exclusive_group(required=True)
