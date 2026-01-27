@@ -64,14 +64,13 @@ class MergeBot:
 
         conflicted_pull_requests = []
         for merge_candidate in self.candidates:
-            for file in merge_candidate.files:
-                if files_counter[file] > 1:
-                    conflicted_pull_requests.append(merge_candidate)
-                    break
-                else:
-                    self._merge(merge_candidate.pull_request)
-        lowest_changes_total = min(conflicted_pull_requests, key=lambda pr: pr.changes_total)
-        self._merge(lowest_changes_total.pull_request)
+            if any([files_counter[file] > 1 for file in merge_candidate.files]):
+                conflicted_pull_requests.append(merge_candidate)
+            else:
+                self._merge(merge_candidate.pull_request)
+        if conflicted_pull_requests:
+            lowest_changes_total = min(conflicted_pull_requests, key=lambda pr: pr.changes_total)
+            self._merge(lowest_changes_total.pull_request)
 
     def _merge(self, pull_request):
         """
@@ -80,7 +79,7 @@ class MergeBot:
         :return: None.
         """
         try:
-            pull_request.merge()
+            # pull_request.merge()
             info("#%s merged successfully.", pull_request)
         except UnknownObjectException:
             active_pulls = self.github.get_user(self.username).get_repo(self.repository).get_pulls()
