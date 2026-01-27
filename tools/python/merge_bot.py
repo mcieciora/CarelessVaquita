@@ -79,7 +79,7 @@ class MergeBot:
         :return: None.
         """
         try:
-            # pull_request.merge()
+            pull_request.merge()
             info("#%s merged successfully.", pull_request)
         except UnknownObjectException:
             active_pulls = self.github.get_user(self.username).get_repo(self.repository).get_pulls()
