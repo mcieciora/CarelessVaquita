@@ -2,8 +2,17 @@ from os import environ
 from sys import argv, exit
 from argparse import ArgumentParser
 from logging import basicConfig, info, INFO, warning
+from collections import Counter
 from github import Auth, Github
 from github.GithubException import UnknownObjectException
+
+
+class MergeCandidate:
+    """GitHub object merge candidate class."""
+    def __init__(self, pull_request, files, changes_total):
+        self.pull_request = pull_request
+        self.files = files
+        self.changes_total = changes_total
 
 
 class MergeBot:
@@ -14,12 +23,13 @@ class MergeBot:
         self.username = environ["GITHUB_REPO_OWNER"]
         self.repository = environ["GITHUB_REPO_NAME"]
         self.bot_name = environ["GITHUB_BOT"]
+        self.candidates = []
 
     def create_pull_request(self, branch_name, base_branch):
         """
         Create pull request with PyGitHub library.
 
-        :return: None
+        :return: None.
         """
         return_value = self.github.get_user(self.username).get_repo(self.repository).create_pull(
             base=base_branch,
@@ -30,45 +40,74 @@ class MergeBot:
         self._update_reviewers(return_value)
         info("Created pull request: #%s", return_value.number)
 
-    def merge_pull_request(self):
-        """
-        Get all active pull requests with PyGitHub library.
-
-        :return: None
-        """
-        active_pulls = self.github.get_user(self.username).get_repo(self.repository).get_pulls()
-        found_mergeable_pull_request = False
-        if not list(active_pulls):
-            info("No active pull requests.")
-            exit(100)
-        for pull_request in active_pulls:
-            if pull_request.head.ref.startswith("test_"):
-                info("Omitting %s in merge queue.", pull_request.head.ref)
-                continue
-            if pull_request.mergeable and pull_request.mergeable_state == "clean":
-                found_mergeable_pull_request = True
-                try:
-                    pull_request.merge(delete_branch=True)
-                    info("#%s merged successfully.", pull_request)
-                    break
-                except UnknownObjectException:
-                    active_pulls = self.github.get_user(self.username).get_repo(self.repository).get_pulls()
-                    if pull_request in active_pulls:
-                        warning("#%s could not be merged automatically. "
-                                       "Proceeding with next pull request.", pull_request)
-                        continue
-                    info("#%s merged successfully, "
-                                "but experienced difficulties with branch deletion.", pull_request)
-                    exit(110)
-            info("Pull request #%s status is %s.", pull_request.number, pull_request.mergeable_state)
-        if not found_mergeable_pull_request:
-            exit(120)
-
     @staticmethod
     def _update_reviewers(pull_request):
+        """
+        Update pull request required reviewers list from reviewers config.
+
+        :return: None.
+        """
         with open("required_reviewers", mode="r", encoding="utf-8") as reviewers_file:
             reviewers = reviewers_file.readlines()
             pull_request.create_review_request(reviewers)
+
+    def merge_pull_requests(self):
+        """
+        Merge all the pull requests ready to merge plus one from conflicted list.
+
+        :return: None.
+        """
+        files_counter = Counter(self.filter_pull_requests())
+        if not list(self.candidates):
+            info("No active pull requests.")
+            exit(100)
+
+        conflicted_pull_requests = []
+        for merge_candidate in self.candidates:
+            if any([files_counter[file] > 1 for file in merge_candidate.files]):
+                conflicted_pull_requests.append(merge_candidate)
+            else:
+                self._merge(merge_candidate.pull_request)
+        if conflicted_pull_requests:
+            lowest_changes_total = min(conflicted_pull_requests, key=lambda pr: pr.changes_total)
+            self._merge(lowest_changes_total.pull_request)
+
+    def _merge(self, pull_request):
+        """
+        Merge given pull request and verify it post state.
+
+        :return: None.
+        """
+        try:
+            pull_request.merge()
+            info("#%s merged successfully.", pull_request)
+        except UnknownObjectException:
+            active_pulls = self.github.get_user(self.username).get_repo(self.repository).get_pulls()
+            if pull_request in active_pulls:
+                warning("#%s could not be merged automatically.", pull_request)
+            info("#%s merged successfully, "
+                 "but experienced difficulties with branch deletion.", pull_request)
+            exit(110)
+
+    def filter_pull_requests(self):
+        """
+        Filter active pull requests list to find ones ready to merge.
+
+        :return: List of PullRequest objects.
+        """
+        active_pulls = self.github.get_user(self.username).get_repo(self.repository).get_pulls()
+        all_files = []
+        for pull_request in active_pulls:
+            if pull_request.mergeable and pull_request.mergeable_state == "clean":
+                info("#%s was accepted by the filter.", pull_request.number)
+                files_info = {file.filename: file.changes for file in pull_request.get_files()}
+                all_files = all_files + list(files_info.keys())
+                self.candidates.append(
+                    MergeCandidate(pull_request, list(files_info.keys()), sum(list(files_info.values())))
+                )
+            else:
+                info("#%s was rejected by the filter.", pull_request.number)
+        return all_files
 
 
 if __name__ == "__main__":
@@ -86,4 +125,4 @@ if __name__ == "__main__":
     if args.create:
         merge_bot_api.create_pull_request(args.branch_name, args.base_branch)
     else:
-        merge_bot_api.merge_pull_request()
+        merge_bot_api.merge_pull_requests()
