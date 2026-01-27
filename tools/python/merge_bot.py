@@ -2,8 +2,17 @@ from os import environ
 from sys import argv, exit
 from argparse import ArgumentParser
 from logging import basicConfig, info, INFO, warning
+from collections import Counter
 from github import Auth, Github
 from github.GithubException import UnknownObjectException
+
+
+class MergeCandidate:
+    """GitHub object merge candidate class."""
+    def __init__(self, pull_request, files, changes_total):
+        self.pull_request = pull_request
+        self.files = files
+        self.changes_total = changes_total
 
 
 class MergeBot:
@@ -14,6 +23,7 @@ class MergeBot:
         self.username = environ["GITHUB_REPO_OWNER"]
         self.repository = environ["GITHUB_REPO_NAME"]
         self.bot_name = environ["GITHUB_BOT"]
+        self.candidates = []
 
     def create_pull_request(self, branch_name, base_branch):
         """
@@ -36,17 +46,22 @@ class MergeBot:
             reviewers = reviewers_file.readlines()
             pull_request.create_review_request(reviewers)
 
-    def merge_pull_request(self):
-        pull_requests_ready_to_merge = self.filter_pull_requests()
-        if not list(pull_requests_ready_to_merge):
+    def merge_pull_requests(self):
+        files_counter = self.filter_pull_requests()
+        if not list(self.candidates):
             info("No active pull requests.")
             exit(100)
-        self.find_conflicts(pull_requests_ready_to_merge)
 
-    def find_conflicts(self, ready_to_merge_prs_list):
-        for pull_request in ready_to_merge_prs_list:
-            list_of_files = pull_request.get_files()
-        print("a")
+        conflicted_pull_requests = []
+        for merge_candidate in self.candidates:
+            for file in merge_candidate.files:
+                if files_counter[file] > 1:
+                    conflicted_pull_requests.append(merge_candidate)
+                    break
+                else:
+                    self._merge(merge_candidate.pull_request)
+        lowest_changes_total = min(conflicted_pull_requests, key=lambda pr: pr.changes_total)
+        self._merge(lowest_changes_total.pull_request)
 
     def _merge(self, pull_request):
         try:
@@ -55,8 +70,7 @@ class MergeBot:
         except UnknownObjectException:
             active_pulls = self.github.get_user(self.username).get_repo(self.repository).get_pulls()
             if pull_request in active_pulls:
-                warning("#%s could not be merged automatically. "
-                        "Proceeding with next pull request.", pull_request)
+                warning("#%s could not be merged automatically.", pull_request)
             info("#%s merged successfully, "
                  "but experienced difficulties with branch deletion.", pull_request)
             exit(110)
@@ -67,18 +81,22 @@ class MergeBot:
 
         :return: List of PullRequest objects.
         """
-        ready_to_merge_prs_list = []
         active_pulls = self.github.get_user(self.username).get_repo(self.repository).get_pulls()
+        all_files = []
         for pull_request in active_pulls:
             # if pull_request.head.ref.startswith("test_"):
             #     info("Omitting %s in merge queue.", pull_request.head.ref)
             #     continue
             if pull_request.mergeable and pull_request.mergeable_state == "clean":
                 info("#%s was accepted by the filter.", pull_request.number)
-                ready_to_merge_prs_list.append(pull_request)
+                files_info = {file.filename: file.changes for file in pull_request.get_files()}
+                all_files = all_files + list(files_info.keys())
+                self.candidates.append(
+                    MergeCandidate(pull_request, list(files_info.keys()), sum(list(files_info.values())))
+                )
             else:
                 info("#%s was rejected by the filter.", pull_request.number)
-        return ready_to_merge_prs_list
+        return Counter(all_files)
 
 
 if __name__ == "__main__":
@@ -99,4 +117,4 @@ if __name__ == "__main__":
     if args.create:
         merge_bot_api.create_pull_request(args.branch_name, args.base_branch)
     else:
-        merge_bot_api.merge_pull_request()
+        merge_bot_api.merge_pull_requests()
