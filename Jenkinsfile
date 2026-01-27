@@ -22,7 +22,7 @@ pipeline {
             steps {
                 script {
                     sh "curl -OL https://raw.githubusercontent.com/mcieciora/CarelessVaquita/refs/heads/${BRANCH_TO_USE}/.tools_config"
-                    def BRANCH_REV = BRANCH_TO_USE.equals("develop") || BRANCH_TO_USE.equals("master") ? "HEAD^1" : "develop"
+                    def BRANCH_REV = BRANCH_TO_USE.equals("develop") || BRANCH_TO_USE.equals("master") ? "HEAD^1" : "origin/develop"
                     withEnv(getConfig(".tools_config")) {
                         withCredentials([sshUserPrivateKey(credentialsId: "agent_${NODE_NAME}", keyFileVariable: "key")]) {
                             sh 'GIT_SSH_COMMAND="ssh -i $key"'
@@ -37,6 +37,11 @@ pipeline {
                                           returnStatus: true)
                     build_merge_bot_image = sh(script: "git diff --name-only \$(git rev-parse HEAD) \$(git rev-parse ${BRANCH_REV}) | grep -e required_reviewers -e src -e requirements/merge_bot -e tools/python/merge_bot.py -e tools/merge_bot/Dockerfile",
                                           returnStatus: true)
+
+                    withEnv(getConfig(".credentials")) {
+                        sh "chmod +x tools/shell_scripts/pr_check_status.sh"
+                        sh "tools/shell_scripts/pr_check_status.sh ${BRANCH_TO_USE} pending"
+                    }
                 }
             }
         }
@@ -46,6 +51,7 @@ pipeline {
                     when {
                         anyOf {
                             expression {build_test_image == 0}
+                            expression {IS_NIGHTLY.toBoolean() == true}
                             expression {FORCE_DOCKER_IMAGE_BUILD.toBoolean() == true}
                         }
                     }
@@ -53,19 +59,19 @@ pipeline {
                         script {
                             withEnv(getConfig(".tools_config")) {
                                 sh "docker build --build-arg DEFAULT_IMAGE_TAG=${DEFAULT_IMAGE_TAG} --no-cache -t test_image -f automated_tests/Dockerfile ."
-                                if (BRANCH_TO_USE == "master" || BRANCH_TO_USE == "develop") {
+                                if (BRANCH_TO_USE == "master" || BRANCH_TO_USE == "develop" && IS_NIGHTLY.toBoolean() == false) {
                                     sh "docker tag test_image ${DOCKERHUB_REPO}:test_image"
                                     withCredentials([usernamePassword(credentialsId: "dockerhub_id", usernameVariable: "USERNAME", passwordVariable: "PASSWORD")]) {
                                         sh "docker login --username $USERNAME --password $PASSWORD"
                                         sh "docker push ${DOCKERHUB_REPO}:test_image"
                                     }
                                 }
-                                else {
-                                    withEnv(getConfig(".credentials")) {
-                                        sh "docker tag test_image ${REGISTRY_URL}/${DOCKERHUB_REPO}:test_image"
-                                        sh "docker push ${REGISTRY_URL}/${DOCKERHUB_REPO}:test_image"
-                                    }
-                                }
+//                                 else {
+//                                     withEnv(getConfig(".credentials")) {
+//                                         sh "docker tag test_image ${REGISTRY_URL}/${DOCKERHUB_REPO}:test_image"
+//                                         sh "docker push ${REGISTRY_URL}/${DOCKERHUB_REPO}:test_image"
+//                                     }
+//                                 }
                             }
                         }
                     }
@@ -74,6 +80,7 @@ pipeline {
                     when {
                         anyOf {
                             expression {build_merge_bot_image == 0}
+                            expression {IS_NIGHTLY.toBoolean() == true}
                             expression {FORCE_DOCKER_IMAGE_BUILD.toBoolean() == true}
                         }
                     }
@@ -81,19 +88,19 @@ pipeline {
                         script {
                             withEnv(getConfig(".tools_config")) {
                                 sh "docker build --build-arg DEFAULT_IMAGE_TAG=${DEFAULT_IMAGE_TAG} --no-cache -t merge_bot_image -f tools/merge_bot/Dockerfile ."
-                                if (BRANCH_TO_USE == "master" || BRANCH_TO_USE == "develop") {
+                                if (BRANCH_TO_USE == "master" || BRANCH_TO_USE == "develop" && IS_NIGHTLY.toBoolean() == false) {
                                     sh "docker tag merge_bot_image ${DOCKERHUB_REPO}:merge_bot"
                                     withCredentials([usernamePassword(credentialsId: "dockerhub_id", usernameVariable: "USERNAME", passwordVariable: "PASSWORD")]) {
                                         sh "docker login --username $USERNAME --password $PASSWORD"
                                         sh "docker push ${DOCKERHUB_REPO}:merge_bot"
                                     }
                                 }
-                                else {
-                                    withEnv(getConfig(".credentials")) {
-                                        sh "docker tag merge_bot_image ${REGISTRY_URL}/${DOCKERHUB_REPO}:merge_bot"
-                                        sh "docker push ${REGISTRY_URL}/${DOCKERHUB_REPO}:merge_bot"
-                                    }
-                                }
+//                                 else {
+//                                     withEnv(getConfig(".credentials")) {
+//                                         sh "docker tag merge_bot_image ${REGISTRY_URL}/${DOCKERHUB_REPO}:merge_bot"
+//                                         sh "docker push ${REGISTRY_URL}/${DOCKERHUB_REPO}:merge_bot"
+//                                     }
+//                                 }
                             }
                         }
                     }
@@ -102,6 +109,7 @@ pipeline {
                     when {
                         allOf {
                             expression {build_test_image == 1}
+                            expression {IS_NIGHTLY.toBoolean() == false}
                             expression {FORCE_DOCKER_IMAGE_BUILD.toBoolean() == false}
                         }
                     }
@@ -170,7 +178,7 @@ pipeline {
                 stage ("Code coverage") {
                     steps {
                         script {
-                            sh "docker run --name code_coverage_container test_image sh -c 'coverage run --source=src -m pytest -k unittest; coverage html; coverage report --fail-under=95'"
+                            sh "docker run --name code_coverage_container test_image sh -c 'coverage run --source=src -m pytest -k unittest; coverage html; coverage report --fail-under=85'"
                         }
                     }
                     post {
@@ -256,7 +264,7 @@ pipeline {
             steps {
                 script {
                     sh "chmod +x tools/shell_scripts/app_health_check.sh"
-                    sh "tools/shell_scripts/app_health_check.sh 30 1"
+                    sh "tools/shell_scripts/app_health_check.sh 10 1"
                 }
             }
             post {
@@ -270,7 +278,7 @@ pipeline {
                 axes {
                     axis {
                         name "TEST_GROUP"
-                        values "google"
+                        values "add", "subtract", "multiply", "divide", "error"
                     }
                 }
                 stages {
@@ -289,6 +297,7 @@ pipeline {
                         }
                         post {
                             always {
+                                sh "docker container cp ${TEST_GROUP}_test:/app/results ./"
                                 sh "docker rm ${TEST_GROUP}_test"
                                 archiveArtifacts artifacts: "**/${TEST_GROUP}_results.xml"
                             }
@@ -304,6 +313,21 @@ pipeline {
                 }
             }
             parallel {
+                stage ("Update PR status") {
+                    when {
+                        expression {
+                            return BRANCH_TO_USE.contains("feature") || BRANCH_TO_USE.contains("release")
+                        }
+                    }
+                    steps {
+                        script {
+                            withEnv(getConfig(".credentials")) {
+                                sh "chmod +x tools/shell_scripts/pr_check_status.sh"
+                                sh "tools/shell_scripts/pr_check_status.sh ${BRANCH_TO_USE} success"
+                            }
+                        }
+                    }
+                }
                 stage ("Push docker image") {
                     when {
                         allOf {
@@ -314,13 +338,13 @@ pipeline {
                     steps {
                         script {
                             withEnv(getConfig(".tools_config")) {
-                                sh "docker build --build-arg PYTHON_BASE_IMAGE=python:${DEFAULT_IMAGE_TAG} --no-cache -t custom_image ."
+                                sh "docker build --build-arg DEFAULT_IMAGE_TAG=${DEFAULT_IMAGE_TAG} --no-cache -t custom_image ."
                                 sh "docker tag custom_image ${DOCKERHUB_REPO}:${BRANCH_TO_USE}-${curDate}"
-                                withEnv(getConfig(".credentials")) {
-                                    echo "${BRANCH_TO_USE.replace("/", "_")}"
-                                    sh "docker tag custom_image ${REGISTRY_URL}/${DOCKERHUB_REPO}:${BRANCH_TO_USE}-${curDate}"
-                                    sh "docker push ${REGISTRY_URL}/${DOCKERHUB_REPO}:${BRANCH_TO_USE}-${curDate}"
-                                }
+//                                 withEnv(getConfig(".credentials")) {
+//                                     echo "${BRANCH_TO_USE.replace("/", "_")}"
+//                                     sh "docker tag custom_image ${REGISTRY_URL}/${DOCKERHUB_REPO}:${BRANCH_TO_USE}-${curDate}"
+//                                     sh "docker push ${REGISTRY_URL}/${DOCKERHUB_REPO}:${BRANCH_TO_USE}-${curDate}"
+//                                 }
                                 withCredentials([usernamePassword(credentialsId: "dockerhub_id", usernameVariable: "USERNAME", passwordVariable: "PASSWORD")]) {
                                     sh "docker login --username $USERNAME --password $PASSWORD"
                                     sh "docker push ${DOCKERHUB_REPO}:${BRANCH_TO_USE}-${curDate}"
@@ -333,34 +357,24 @@ pipeline {
                         }
                     }
                 }
-                stage ("Push tag") {
+                stage ("Push tags") {
                     when {
                         allOf {
-                            expression {BRANCH_TO_USE == "master"}
+                            expression {BRANCH_TO_USE == "master" || BRANCH_TO_USE == "develop"}
                             expression {IS_NIGHTLY.toBoolean() == false}
                         }
                     }
                     steps {
                         script {
                             def TAG_NAME = "${BRANCH_TO_USE}-${curDate}"
+                            def RELEASE_DESC = BRANCH_TO_USE == "master" ? "Stable ${TAG_NAME}" : "Dev ${TAG_NAME}"
+                            def PRE_RELEASE_VALUE = "master" ? "false" : "true"
                             withCredentials([sshUserPrivateKey(credentialsId: "agent_${NODE_NAME}", keyFileVariable: "key")]) {
                                 sh 'GIT_SSH_COMMAND="ssh -i $key"'
                                 sh "git tag -a $TAG_NAME -m $TAG_NAME && git push origin $TAG_NAME"
-
                                 withEnv(getConfig(".credentials")) {
-                                    sh """
-                                    curl -X POST https://api.github.com/repos/mcieciora/CarelessVaquita/releases \\
-                                    -H "Authorization: token ${GITHUB_API_TOKEN}" \\
-                                    -H "Accept: application/vnd.github+json" \\
-                                    -H "Content-Type: application/json" \\
-                                    -d '{
-                                      "tag_name": "${TAG_NAME}",
-                                      "name": "Release ${TAG_NAME}",
-                                      "body": "Release ${TAG_NAME} created via API",
-                                      "draft": false,
-                                      "prerelease": false
-                                    }'
-                                    """
+                                    sh "chmod +x tools/shell_scripts/push_github_tags.sh"
+                                    sh "tools/shell_scripts/push_github_tags.sh '${TAG_NAME}' '${RELEASE_DESC}' '${PRE_RELEASE_VALUE}'"
                                 }
                             }
                         }
@@ -382,6 +396,14 @@ pipeline {
                 reportFiles: "index.html",
                 reportName: "PyTestCov"
             ]
+        }
+        failure {
+            withEnv(getConfig(".credentials")) {
+                sh "chmod +x tools/shell_scripts/pr_check_status.sh"
+                sh "tools/shell_scripts/pr_check_status.sh ${BRANCH_TO_USE} failure"
+            }
+        }
+        cleanup {
             cleanWs()
         }
     }

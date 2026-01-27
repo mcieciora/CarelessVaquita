@@ -1,7 +1,7 @@
 pipelineJob("ParametrizedTestPipeline_INPUT.PROJECT_NAME") {
     parameters {
         choiceParam("FLAG", ["unittest", "smoke", "regression", "nightly"], "Choose test flag.")
-        choiceParam("TEST_GROUP", ["all", "google"], "Choose test group.")
+        choiceParam("TEST_GROUP", ["all", "add", "subtract", "multiply", "divide", "error"], "Choose test group.")
         booleanParam("REGULAR_BUILD", true, "If true code linters and staging will be executed too.")
         stringParam("BRANCH", "develop", "Execution branch.")
         booleanParam("FORCE_BUILD", false, "Force Docker to build test_image.")

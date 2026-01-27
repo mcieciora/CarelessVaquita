@@ -1,7 +1,8 @@
-pytest==8.4.1
-coverage==7.9.2
-black==25.1.0
-ruff==0.12.3
-bandit==1.8.6
+pytest==9.0.2
+coverage==7.13.1
+black==25.12.0
+ruff==0.14.11
+bandit==1.9.2
 radon==6.0.1
-mypy==1.16.1
+mypy==1.19.1
+click==8.3.1
