@@ -32,11 +32,14 @@ pipeline {
                     withCredentials([file(credentialsId: "cv_credentials", variable: "cv_credentials_file")]) {
                         sh "cp $cv_credentials_file .credentials"
                     }
+
                     def BRANCH_REV = BRANCH_TO_USE.equals("develop") || BRANCH_TO_USE.equals("master") ? "HEAD^1" : "origin/develop"
                     withEnv(getConfig(".credentials")) {
                         withCredentials([sshUserPrivateKey(credentialsId: "agent_${NODE_NAME}", keyFileVariable: "key")]) {
                             sh 'GIT_SSH_COMMAND="ssh -i $key"'
-                            checkout scmGit(branches: [[name: "*/${BRANCH_TO_USE}"]], extensions: [], userRemoteConfigs: [[url: "${REPO_URL}"]])
+                            checkout scmGit(branches: [[name: "*/${BRANCH_TO_USE}"]], extensions: [], userRemoteConfigs: [[url: "${GITHUB_REPO}"]])
+                            sh "chmod +x tools/shell_scripts/pr_check_status.sh"
+                            sh "tools/shell_scripts/pr_check_status.sh ${BRANCH_TO_USE} pending"
                         }
                     }
                     currentBuild.description = "Branch: ${BRANCH_TO_USE}\nFlag: ${FLAG}\nGroups: ${TEST_GROUPS}"
@@ -44,11 +47,6 @@ pipeline {
                                           returnStatus: true)
                     build_merge_bot_image = sh(script: "git diff --name-only \$(git rev-parse HEAD) \$(git rev-parse ${BRANCH_REV}) | grep -e required_reviewers -e src -e requirements/merge_bot -e tools/python/merge_bot.py -e tools/merge_bot/Dockerfile",
                                           returnStatus: true)
-
-                    withEnv(getConfig(".credentials")) {
-                        sh "chmod +x tools/shell_scripts/pr_check_status.sh"
-                        sh "tools/shell_scripts/pr_check_status.sh ${BRANCH_TO_USE} pending"
-                    }
                 }
             }
         }
