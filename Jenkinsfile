@@ -21,16 +21,15 @@ pipeline {
         stage ("Checkout branch") {
             steps {
                 script {
-                    sh "curl -OL https://raw.githubusercontent.com/mcieciora/CarelessVaquita/refs/heads/${BRANCH_TO_USE}/.tools_config"
+                    withCredentials([file(credentialsId: "cv_credentials", variable: "cv_credentials_file")]) {
+                        sh "cp $cv_credentials_file .credentials"
+                    }
                     def BRANCH_REV = BRANCH_TO_USE.equals("develop") || BRANCH_TO_USE.equals("master") ? "HEAD^1" : "origin/develop"
-                    withEnv(getConfig(".tools_config")) {
+                    withEnv(getConfig(".credentials")) {
                         withCredentials([sshUserPrivateKey(credentialsId: "agent_${NODE_NAME}", keyFileVariable: "key")]) {
                             sh 'GIT_SSH_COMMAND="ssh -i $key"'
                             checkout scmGit(branches: [[name: "*/${BRANCH_TO_USE}"]], extensions: [], userRemoteConfigs: [[url: "${REPO_URL}"]])
                         }
-                    }
-                    withCredentials([file(credentialsId: "cv_credentials", variable: "cv_credentials_file")]) {
-                        sh "cp $cv_credentials_file .credentials"
                     }
                     currentBuild.description = "Branch: ${BRANCH_TO_USE}\nFlag: ${FLAG}\nGroups: ${TEST_GROUPS}"
                     build_test_image = sh(script: "git diff --name-only \$(git rev-parse HEAD) \$(git rev-parse ${BRANCH_REV}) | grep -e automated_tests -e src -e requirements -e tools/python",
