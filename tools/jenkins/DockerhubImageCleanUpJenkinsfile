@@ -52,12 +52,14 @@ pipeline {
             steps {
                 script {
                     withEnv(getConfig(".credentials")) {
-                        String DAYS_NUMBER = params.CUSTOM_DAYS_POLICY ? params.CUSTOM_DAYS_POLICY : env.DAYS_TO_KEEP_REGISTRY_IMAGES_POLICY
-                        sh "chmod +x tools/shell_scripts/delete_old_registry_tags.sh"
-                        String return_value = sh(script: "tools/shell_scripts/delete_old_dockerhub_tags.sh ${DAYS_NUMBER}", returnStdout: true).trim()
-                        echo "${return_value}"
-                        if (return_value.contains("Could not delete tag")) {
-                            unstable(return_value)
+                        withEnv(getConfig(".tools_config")) {
+                            String DAYS_NUMBER = params.CUSTOM_DAYS_POLICY ? params.CUSTOM_DAYS_POLICY : env.DAYS_TO_KEEP_REGISTRY_IMAGES_POLICY
+                            sh "chmod +x tools/shell_scripts/delete_old_registry_tags.sh"
+                            String return_value = sh(script: "tools/shell_scripts/delete_old_registry_tags.sh ${DAYS_NUMBER}", returnStdout: true).trim()
+                            echo "${return_value}"
+                            if (return_value.contains("Could not delete tag")) {
+                                unstable(return_value)
+                            }
                         }
                     }
                 }

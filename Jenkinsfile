@@ -66,12 +66,12 @@ pipeline {
                                         sh "docker push ${DOCKERHUB_REPO}:test_image"
                                     }
                                 }
-//                                 else {
-//                                     withEnv(getConfig(".credentials")) {
-//                                         sh "docker tag test_image ${REGISTRY_URL}/${DOCKERHUB_REPO}:test_image"
-//                                         sh "docker push ${REGISTRY_URL}/${DOCKERHUB_REPO}:test_image"
-//                                     }
-//                                 }
+                                else {
+                                    withEnv(getConfig(".credentials")) {
+                                        sh "docker tag test_image ${REGISTRY_URL}/${DOCKERHUB_REPO}:test_image"
+                                        sh "docker push ${REGISTRY_URL}/${DOCKERHUB_REPO}:test_image"
+                                    }
+                                }
                             }
                         }
                     }
@@ -95,12 +95,12 @@ pipeline {
                                         sh "docker push ${DOCKERHUB_REPO}:merge_bot"
                                     }
                                 }
-//                                 else {
-//                                     withEnv(getConfig(".credentials")) {
-//                                         sh "docker tag merge_bot_image ${REGISTRY_URL}/${DOCKERHUB_REPO}:merge_bot"
-//                                         sh "docker push ${REGISTRY_URL}/${DOCKERHUB_REPO}:merge_bot"
-//                                     }
-//                                 }
+                                else {
+                                    withEnv(getConfig(".credentials")) {
+                                        sh "docker tag merge_bot_image ${REGISTRY_URL}/${DOCKERHUB_REPO}:merge_bot"
+                                        sh "docker push ${REGISTRY_URL}/${DOCKERHUB_REPO}:merge_bot"
+                                    }
+                                }
                             }
                         }
                     }
@@ -340,11 +340,11 @@ pipeline {
                             withEnv(getConfig(".tools_config")) {
                                 sh "docker build --build-arg DEFAULT_IMAGE_TAG=${DEFAULT_IMAGE_TAG} --no-cache -t custom_image ."
                                 sh "docker tag custom_image ${DOCKERHUB_REPO}:${BRANCH_TO_USE}-${curDate}"
-//                                 withEnv(getConfig(".credentials")) {
-//                                     echo "${BRANCH_TO_USE.replace("/", "_")}"
-//                                     sh "docker tag custom_image ${REGISTRY_URL}/${DOCKERHUB_REPO}:${BRANCH_TO_USE}-${curDate}"
-//                                     sh "docker push ${REGISTRY_URL}/${DOCKERHUB_REPO}:${BRANCH_TO_USE}-${curDate}"
-//                                 }
+                                withEnv(getConfig(".credentials")) {
+                                    echo "${BRANCH_TO_USE.replace("/", "_")}"
+                                    sh "docker tag custom_image ${REGISTRY_URL}/${DOCKERHUB_REPO}:${BRANCH_TO_USE}-${curDate}"
+                                    sh "docker push ${REGISTRY_URL}/${DOCKERHUB_REPO}:${BRANCH_TO_USE}-${curDate}"
+                                }
                                 withCredentials([usernamePassword(credentialsId: "dockerhub_id", usernameVariable: "USERNAME", passwordVariable: "PASSWORD")]) {
                                     sh "docker login --username $USERNAME --password $PASSWORD"
                                     sh "docker push ${DOCKERHUB_REPO}:${BRANCH_TO_USE}-${curDate}"

@@ -1,7 +1,6 @@
 #!/bin/bash
 
 CURRENT_DATE=$(date +%s)
-echo "CURRENT_DATE: $CURRENT_DATE"
 
 DAYS_TO_KEEP_REGISTRY_IMAGES_POLICY=$1
 
