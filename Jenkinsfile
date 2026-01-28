@@ -29,7 +29,7 @@ pipeline {
                     withEnv(getConfig(".credentials")) {
                         withCredentials([sshUserPrivateKey(credentialsId: "agent_${NODE_NAME}", keyFileVariable: "key")]) {
                             sh 'GIT_SSH_COMMAND="ssh -i $key"'
-                            checkout scmGit(branches: [[name: "*/${BRANCH_TO_USE}"]], extensions: [], userRemoteConfigs: [[url: "${GITHUB_REPO}"]])
+                            checkout scmGit(branches: [[name: "*/${BRANCH_TO_USE}"]], extensions: [], userRemoteConfigs: [[url: "${GITHUB_REPO_URL}"]])
                             sh "chmod +x tools/shell_scripts/pr_check_status.sh"
                             sh "tools/shell_scripts/pr_check_status.sh ${BRANCH_TO_USE} pending"
                         }

@@ -22,7 +22,7 @@ pipeline {
                     withEnv(getConfig(".tools_config")) {
                         withCredentials([sshUserPrivateKey(credentialsId: "agent_${NODE_NAME}", keyFileVariable: "key")]) {
                             sh 'GIT_SSH_COMMAND="ssh -i $key"'
-                            git branch: params.SCRIPT_BRANCH, url: GITHUB_REPO
+                            git branch: params.SCRIPT_BRANCH, url: GITHUB_REPO_URL
                         }
                     }
                     withCredentials([file(credentialsId: "cv_credentials", variable: "cv_credentials_file")]) {
