@@ -6,6 +6,7 @@ pipeline {
     }
     parameters {
         string(name: "BRANCH", defaultValue: "develop", description: "Execution branch.")
+        booleanParam(name: "DRY_RUN", defaultValue: false, description: "Set to true to for pipeline stability verification. No other actions will be taken.")
     }
     options {
         skipDefaultCheckout()
@@ -41,6 +42,11 @@ pipeline {
             }
         }
         stage("Verify dependencies") {
+            when {
+                expression {
+                    return DRY_RUN.toBoolean() == false
+                }
+            }
             steps {
                 script {
                     Integer python_dependencies_status = sh(script: "docker run --name python_dependency_container test_image python tools/python/python_dependencies_up_to_date_verification.py", returnStatus: true)
