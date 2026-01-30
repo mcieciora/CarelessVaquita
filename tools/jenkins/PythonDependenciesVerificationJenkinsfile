@@ -15,21 +15,23 @@ pipeline {
         stage ("Checkout branch") {
             steps {
                 script {
-                    sh "curl -OL https://raw.githubusercontent.com/mcieciora/CarelessVaquita/refs/heads/${BRANCH}/.tools_config"
-                    withEnv(getToolsConfig()) {
+                    withCredentials([file(credentialsId: "cv_credentials", variable: "cv_credentials_file")]) {
+                        sh "cp $cv_credentials_file .credentials"
+                    }
+                    withEnv(getConfig(".credentials")) {
                         withCredentials([sshUserPrivateKey(credentialsId: "agent_${NODE_NAME}", keyFileVariable: "key")]) {
                             sh 'GIT_SSH_COMMAND="ssh -i $key"'
-                            git branch: params.BRANCH, url: 'git@github.com:mcieciora/CarelessVaquita.git'
+                            git branch: params.SCRIPT_BRANCH, url: 'git@github.com:mcieciora/CarelessVaquita.git'
                         }
                     }
-                    currentBuild.description = "Branch: ${BRANCH}"
+                    currentBuild.description = "Branch: ${SCRIPT_BRANCH}"
                 }
             }
         }
         stage ("Prepare test image") {
             steps {
                 script {
-                    withEnv(getToolsConfig()) {
+                    withEnv(getConfig(".credentials")) {
                         if (params.BRANCH == "develop" || params.BRANCH == "master") {
                             sh "docker pull ${DOCKERHUB_REPO}:test_image"
                             sh "docker tag ${DOCKERHUB_REPO}:test_image test_image"
@@ -67,7 +69,7 @@ pipeline {
     post {
         always {
             script {
-                withEnv(getToolsConfig()) {
+                withEnv(getConfig(".credentials")) {
                     if (params.BRANCH == "develop" || params.BRANCH == "master") {
                         sh "docker rmi ${DOCKERHUB_REPO}:test_image"
                     }
@@ -81,6 +83,6 @@ pipeline {
     }
 }
 
-def getToolsConfig() {
-    return readFile(".tools_config").split("\n") as List
+def getConfig(fileName) {
+    return readFile(fileName).split("\n") as List
 }
