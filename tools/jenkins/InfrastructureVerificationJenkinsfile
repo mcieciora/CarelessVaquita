@@ -1,0 +1,114 @@
+pipeline {
+    agent {
+        label "master"
+    }
+    options {
+        skipDefaultCheckout()
+    }
+    stages {
+        stage ("Trigger infrastructure verification builds") {
+            parallel {
+                stage ("BuildAndPushDockerImage") {
+                    steps {
+                        script {
+                            def build = build job: "BuildAndPushDockerImage_CarelessVaquita",
+                            parameters: [
+                                string(name: "BRANCH", value: params.SCRIPT_BRANCH),
+                                string(name: "CUSTOM_TAG", value: "verification_tag"),
+                                string(name: "DOCKERFILE_PATH", value: "Dockerfile"),
+                                booleanParam(name: "DRY_RUN", value: true)
+                            ]
+                        }
+                    }
+                }
+                stage ("DockerhubImageCleanUp") {
+                    steps {
+                        script {
+                            def build = build job: "DockerhubImageCleanUp_CarelessVaquita",
+                            parameters: [
+                                string(name: "SCRIPT_BRANCH", value: params.SCRIPT_BRANCH),
+                                string(name: "CUSTOM_DAYS_POLICY", value: "7"),
+                                booleanParam(name: "DRY_RUN", value: true)
+                            ]
+                        }
+                    }
+                }
+                stage ("PythonDependenciesVerification") {
+                    steps {
+                        script {
+                            def build = build job: "PythonDependenciesVerification_CarelessVaquita",
+                            parameters: [
+                                string(name: "SCRIPT_BRANCH", value: params.SCRIPT_BRANCH),
+                                string(name: "BRANCH", value: params.SCRIPT_BRANCH),
+                                booleanParam(name: "DRY_RUN", value: true)
+                            ]
+                        }
+                    }
+                }
+                stage ("ScanDockerImages") {
+                    steps {
+                        script {
+                            def build = build job: "ScanDockerImages_CarelessVaquita",
+                            parameters: [
+                                string(name: "SCRIPT_BRANCH", value: params.SCRIPT_BRANCH),
+                                booleanParam(name: "DRY_RUN", value: true)
+                            ]
+                        }
+                    }
+                }
+                stage ("MergeBot") {
+                    steps {
+                        script {
+                            def build = build job: "MergeBot_CarelessVaquita/MergeBot_CarelessVaquita",
+                            parameters: [
+                                string(name: "SCRIPT_BRANCH", value: params.SCRIPT_BRANCH),
+                                booleanParam(name: "DRY_RUN", value: true)
+                            ]
+                        }
+                    }
+                }
+                stage ("PromoteBranch") {
+                    steps {
+                        script {
+                            def build = build job: "MergeBot_CarelessVaquita/PromoteBranch_CarelessVaquita",
+                            parameters: [
+                                string(name: "SCRIPT_BRANCH", value: params.SCRIPT_BRANCH),
+                                string(name: "BRANCH", value: params.SCRIPT_BRANCH),
+                                string(name: "TARGET_BRANCH", value: "develop"),
+                                booleanParam(name: "DRY_RUN", value: true)
+                            ]
+                        }
+                    }
+                }
+                stage ("NightlyTestPipeline") {
+                    steps {
+                        script {
+                            def build = build job: "NightlyTestPipeline_CarelessVaquita",
+                            parameters: [
+                                string(name: "SCRIPT_BRANCH", value: params.SCRIPT_BRANCH),
+                                booleanParam(name: "DRY_RUN", value: true)
+                            ]
+                        }
+                    }
+                }
+                stage ("ParametrizedTestPipeline") {
+                    steps {
+                        script {
+                            def build = build job: "ParametrizedTestPipeline_CarelessVaquita",
+                            parameters: [
+                                string(name: "FLAG", value: "smoke"),
+                                string(name: "BRANCH", value: params.SCRIPT_BRANCH),
+                                booleanParam(name: "DRY_RUN", value: true)
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+    }
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}

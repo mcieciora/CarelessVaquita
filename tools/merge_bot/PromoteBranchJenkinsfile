@@ -5,6 +5,7 @@ pipeline {
     parameters {
         string(name: "BRANCH", defaultValue: "", description: "Branch to promote pull request from.")
         string(name: "TARGET_BRANCH", defaultValue: "develop", description: "Branch to merge source branch to.")
+        booleanParam(name: "DRY_RUN", defaultValue: false, description: "Set to true to for pipeline stability verification. No other actions will be taken.")
     }
     options {
         skipDefaultCheckout()
@@ -31,6 +32,11 @@ pipeline {
             }
         }
         stage("Promote branch") {
+            when {
+                expression {
+                    return DRY_RUN.toBoolean() == false
+                }
+            }
             steps {
                 script {
                     sh "curl -OL https://raw.githubusercontent.com/mcieciora/CarelessVaquita/refs/heads/${SCRIPT_BRANCH}/.tools_config"

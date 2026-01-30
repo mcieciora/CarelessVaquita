@@ -2,6 +2,9 @@ pipeline {
     agent {
         label "executor"
     }
+    parameters {
+        booleanParam(name: "DRY_RUN", defaultValue: false, description: "Set to true to for pipeline stability verification. No other actions will be taken.")
+    }
     triggers {
         cron("H/15 * * * *")
     }
@@ -29,6 +32,11 @@ pipeline {
             }
         }
         stage("Merge branch") {
+            when {
+                expression {
+                    return DRY_RUN.toBoolean() == false
+                }
+            }
             steps {
                 script {
                     sh "curl -OL https://raw.githubusercontent.com/mcieciora/CarelessVaquita/refs/heads/${SCRIPT_BRANCH}/.tools_config"

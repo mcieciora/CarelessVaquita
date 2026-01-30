@@ -1,5 +1,3 @@
-def customImage
-
 pipeline {
     agent {
         label "executor"
@@ -10,6 +8,7 @@ pipeline {
     parameters {
         string(name: "SCRIPT_BRANCH", defaultValue: "develop", description: "Execution branch.")
         string(name: "CUSTOM_DAYS_POLICY", defaultValue: "", description: "Custom number of days to keep docker images.")
+        booleanParam(name: "DRY_RUN", defaultValue: false, description: "Set to true to for pipeline stability verification. No other actions will be taken.")
     }
     options {
         skipDefaultCheckout()
@@ -18,12 +17,9 @@ pipeline {
         stage ("Checkout branch") {
             steps {
                 script {
-                    sh "curl -OL https://raw.githubusercontent.com/mcieciora/CarelessVaquita/refs/heads/${SCRIPT_BRANCH}/.tools_config"
-                    withEnv(getConfig(".tools_config")) {
-                        withCredentials([sshUserPrivateKey(credentialsId: "agent_${NODE_NAME}", keyFileVariable: "key")]) {
-                            sh 'GIT_SSH_COMMAND="ssh -i $key"'
-                            git branch: params.SCRIPT_BRANCH, url: 'git@github.com:mcieciora/CarelessVaquita.git'
-                        }
+                    withCredentials([sshUserPrivateKey(credentialsId: "agent_${NODE_NAME}", keyFileVariable: "key")]) {
+                        sh 'GIT_SSH_COMMAND="ssh -i $key"'
+                        git branch: params.SCRIPT_BRANCH, url: 'git@github.com:mcieciora/CarelessVaquita.git'
                     }
                     withCredentials([file(credentialsId: "cv_credentials", variable: "cv_credentials_file")]) {
                         sh "cp $cv_credentials_file .credentials"
@@ -32,6 +28,11 @@ pipeline {
             }
         }
         stage("CleanUp Dockerhub images") {
+            when {
+                expression {
+                    return DRY_RUN.toBoolean() == false
+                }
+            }
             steps {
                 script {
                     withCredentials([usernamePassword(credentialsId: "dockerhub_id", usernameVariable: "USERNAME", passwordVariable: "PASSWORD")]) {
@@ -49,6 +50,11 @@ pipeline {
             }
         }
         stage("CleanUp Registry images") {
+            when {
+                expression {
+                    return DRY_RUN.toBoolean() == false
+                }
+            }
             steps {
                 script {
                     withEnv(getConfig(".credentials")) {
