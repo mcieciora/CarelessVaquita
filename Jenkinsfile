@@ -21,18 +21,15 @@ pipeline {
         stage ("Checkout branch") {
             steps {
                 script {
+                    def BRANCH_REV = BRANCH_TO_USE.equals("develop") || BRANCH_TO_USE.equals("master") ? "HEAD^1" : "origin/develop"
+                    withCredentials([sshUserPrivateKey(credentialsId: "agent_${NODE_NAME}", keyFileVariable: "key")]) {
+                        sh 'GIT_SSH_COMMAND="ssh -i $key"'
+                        git branch: BRANCH_TO_USE, url: 'git@github.com:mcieciora/CarelessVaquita.git'
+                        sh "chmod +x tools/shell_scripts/pr_check_status.sh"
+                        sh "tools/shell_scripts/pr_check_status.sh ${BRANCH_TO_USE} pending"
+                    }
                     withCredentials([file(credentialsId: "cv_credentials", variable: "cv_credentials_file")]) {
                         sh "cp $cv_credentials_file .credentials"
-                    }
-
-                    def BRANCH_REV = BRANCH_TO_USE.equals("develop") || BRANCH_TO_USE.equals("master") ? "HEAD^1" : "origin/develop"
-                    withEnv(getConfig(".credentials")) {
-                        withCredentials([sshUserPrivateKey(credentialsId: "agent_${NODE_NAME}", keyFileVariable: "key")]) {
-                            sh 'GIT_SSH_COMMAND="ssh -i $key"'
-                            checkout scmGit(branches: [[name: "*/${BRANCH_TO_USE}"]], extensions: [], userRemoteConfigs: [[url: "${GITHUB_REPO_URL}"]])
-                            sh "chmod +x tools/shell_scripts/pr_check_status.sh"
-                            sh "tools/shell_scripts/pr_check_status.sh ${BRANCH_TO_USE} pending"
-                        }
                     }
                     currentBuild.description = "Branch: ${BRANCH_TO_USE}\nFlag: ${FLAG}\nGroups: ${TEST_GROUPS}"
                     build_test_image = sh(script: "git diff --name-only \$(git rev-parse HEAD) \$(git rev-parse ${BRANCH_REV}) | grep -e automated_tests -e src -e requirements -e tools/python",
@@ -54,17 +51,17 @@ pipeline {
                     }
                     steps {
                         script {
-                            withEnv(getConfig(".tools_config")) {
-                                sh "docker build --build-arg DEFAULT_IMAGE_TAG=${DEFAULT_IMAGE_TAG} --no-cache -t test_image -f automated_tests/Dockerfile ."
-                                if ((BRANCH_TO_USE == "master" || BRANCH_TO_USE == "develop") && IS_NIGHTLY.toBoolean() == false) {
-                                    sh "docker tag test_image ${DOCKERHUB_REPO}:test_image"
-                                    withCredentials([usernamePassword(credentialsId: "dockerhub_id", usernameVariable: "USERNAME", passwordVariable: "PASSWORD")]) {
-                                        sh "docker login --username $USERNAME --password $PASSWORD"
-                                        sh "docker push ${DOCKERHUB_REPO}:test_image"
+                            withEnv(getConfig(".credentials")) {
+                                withEnv(getConfig(".tools_config")) {
+                                    sh "docker build --build-arg DEFAULT_IMAGE_TAG=${DEFAULT_IMAGE_TAG} --no-cache -t test_image -f automated_tests/Dockerfile ."
+                                    if ((BRANCH_TO_USE == "master" || BRANCH_TO_USE == "develop") && IS_NIGHTLY.toBoolean() == false) {
+                                        sh "docker tag test_image ${DOCKERHUB_REPO}:test_image"
+                                        withCredentials([usernamePassword(credentialsId: "dockerhub_id", usernameVariable: "USERNAME", passwordVariable: "PASSWORD")]) {
+                                            sh "docker login --username $USERNAME --password $PASSWORD"
+                                            sh "docker push ${DOCKERHUB_REPO}:test_image"
+                                        }
                                     }
-                                }
-                                else {
-                                    withEnv(getConfig(".credentials")) {
+                                    else {
                                         sh "docker tag test_image ${REGISTRY_URL}/${DOCKERHUB_REPO}:test_image"
                                         sh "docker push ${REGISTRY_URL}/${DOCKERHUB_REPO}:test_image"
                                     }
@@ -83,17 +80,17 @@ pipeline {
                     }
                     steps {
                         script {
-                            withEnv(getConfig(".tools_config")) {
-                                sh "docker build --build-arg DEFAULT_IMAGE_TAG=${DEFAULT_IMAGE_TAG} --no-cache -t merge_bot_image -f tools/merge_bot/Dockerfile ."
-                                if ((BRANCH_TO_USE == "master" || BRANCH_TO_USE == "develop") && IS_NIGHTLY.toBoolean() == false) {
-                                    sh "docker tag merge_bot_image ${DOCKERHUB_REPO}:merge_bot"
-                                    withCredentials([usernamePassword(credentialsId: "dockerhub_id", usernameVariable: "USERNAME", passwordVariable: "PASSWORD")]) {
-                                        sh "docker login --username $USERNAME --password $PASSWORD"
-                                        sh "docker push ${DOCKERHUB_REPO}:merge_bot"
+                            withEnv(getConfig(".credentials")) {
+                                withEnv(getConfig(".tools_config")) {
+                                    sh "docker build --build-arg DEFAULT_IMAGE_TAG=${DEFAULT_IMAGE_TAG} --no-cache -t merge_bot_image -f tools/merge_bot/Dockerfile ."
+                                    if ((BRANCH_TO_USE == "master" || BRANCH_TO_USE == "develop") && IS_NIGHTLY.toBoolean() == false) {
+                                        sh "docker tag merge_bot_image ${DOCKERHUB_REPO}:merge_bot"
+                                        withCredentials([usernamePassword(credentialsId: "dockerhub_id", usernameVariable: "USERNAME", passwordVariable: "PASSWORD")]) {
+                                            sh "docker login --username $USERNAME --password $PASSWORD"
+                                            sh "docker push ${DOCKERHUB_REPO}:merge_bot"
+                                        }
                                     }
-                                }
-                                else {
-                                    withEnv(getConfig(".credentials")) {
+                                    else {
                                         sh "docker tag merge_bot_image ${REGISTRY_URL}/${DOCKERHUB_REPO}:merge_bot"
                                         sh "docker push ${REGISTRY_URL}/${DOCKERHUB_REPO}:merge_bot"
                                     }
@@ -112,7 +109,7 @@ pipeline {
                     }
                     steps {
                         script {
-                            withEnv(getConfig(".tools_config")) {
+                            withEnv(getConfig(".credentials")) {
                                 sh "docker pull ${DOCKERHUB_REPO}:test_image"
                                 sh "docker tag ${DOCKERHUB_REPO}:test_image test_image"
                             }

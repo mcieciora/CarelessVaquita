@@ -18,7 +18,7 @@ pipeline {
                     withEnv(getToolsConfig()) {
                         withCredentials([sshUserPrivateKey(credentialsId: "agent_${NODE_NAME}", keyFileVariable: "key")]) {
                             sh 'GIT_SSH_COMMAND="ssh -i $key"'
-                            git branch: params.BRANCH, url: GITHUB_REPO_URL
+                            git branch: params.BRANCH, url: 'git@github.com:mcieciora/CarelessVaquita.git'
                         }
                     }
                     currentBuild.description = "Branch: ${BRANCH}"

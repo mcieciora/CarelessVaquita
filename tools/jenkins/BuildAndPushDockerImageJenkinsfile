@@ -16,7 +16,7 @@ pipeline {
                 script {
                     sh "curl -OL https://raw.githubusercontent.com/mcieciora/CarelessVaquita/refs/heads/${BRANCH}/.tools_config"
                     withEnv(getToolsConfig()) {
-                        git branch: BRANCH, url: GITHUB_REPO_URL
+                        git branch: BRANCH, url: 'git@github.com:mcieciora/CarelessVaquita.git'
                     }
                     currentBuild.description = "Branch: ${BRANCH}\nTag: ${CUSTOM_TAG}\nDockerfile: ${DOCKERFILE_PATH}"
                 }
