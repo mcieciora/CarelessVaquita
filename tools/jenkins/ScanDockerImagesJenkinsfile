@@ -86,7 +86,7 @@ pipeline {
     post {
         always {
             sh "docker logout"
-            archiveArtifacts artifacts: "scan_*", followSymlinks: false
+            archiveArtifacts allowEmptyArchive: true, artifacts: "scan_*", followSymlinks: false
             cleanWs()
         }
     }

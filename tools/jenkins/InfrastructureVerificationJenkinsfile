@@ -11,7 +11,7 @@ pipeline {
                 stage ("BuildAndPushDockerImage") {
                     steps {
                         script {
-                            def build = build job: "ParametrizedTestPipeline_CarelessVaquita",
+                            def build = build job: "BuildAndPushDockerImage_CarelessVaquita",
                             parameters: [
                                 string(name: "BRANCH", value: params.SCRIPT_BRANCH),
                                 string(name: "CUSTOM_TAG", value: "verification_tag"),

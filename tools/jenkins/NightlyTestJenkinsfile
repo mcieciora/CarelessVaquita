@@ -20,6 +20,11 @@ pipeline {
             }
         }
         stage ("Python verification") {
+            when {
+                expression {
+                    return DRY_RUN.toBoolean() == false
+                }
+            }
             steps {
                 script {
                     def build = build job: "PythonDependenciesVerification_CarelessVaquita",
@@ -31,6 +36,11 @@ pipeline {
             }
         }
         stage ("Scan docker images") {
+            when {
+                expression {
+                    return DRY_RUN.toBoolean() == false
+                }
+            }
             steps {
                 script {
                     def build = build job: "ScanDockerImages_CarelessVaquita",
