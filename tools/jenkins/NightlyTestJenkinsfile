@@ -2,6 +2,9 @@ pipeline {
     agent {
         label "master"
     }
+    parameters {
+        booleanParam(name: "DRY_RUN", defaultValue: false, description: "Set to true to for pipeline stability verification. No other actions will be taken.")
+    }
     triggers {
         cron("H 21 * * *")
     }
@@ -39,6 +42,11 @@ pipeline {
             }
         }
         stage ("Trigger nightly builds") {
+            when {
+                expression {
+                    return DRY_RUN.toBoolean() == false
+                }
+            }
             parallel {
                 stage ("develop") {
                     steps {

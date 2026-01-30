@@ -6,6 +6,7 @@ pipeline {
         string(name: "BRANCH", defaultValue: "develop", description: "Execution branch.")
         string(name: "CUSTOM_TAG", description: "Tag of pushed image.")
         string(name: "DOCKERFILE_PATH", description: "Path to Dockerfile.")
+        booleanParam(name: "DRY_RUN", defaultValue: false, description: "Set to true to for pipeline stability verification. No other actions will be taken.")
     }
     options {
         skipDefaultCheckout()
@@ -28,9 +29,11 @@ pipeline {
                     withEnv(getToolsConfig()) {
                         sh "docker build --build-arg DEFAULT_IMAGE_TAG=${DEFAULT_IMAGE_TAG} --no-cache -t custom_image -f ${DOCKERFILE_PATH} ."
                         sh "docker tag custom_image ${DOCKERHUB_REPO}:${CUSTOM_TAG}"
-                        withCredentials([usernamePassword(credentialsId: "dockerhub_id", usernameVariable: "USERNAME", passwordVariable: "PASSWORD")]) {
-                            sh "docker login --username $USERNAME --password $PASSWORD"
-                            sh "docker push ${DOCKERHUB_REPO}:${CUSTOM_TAG}"
+                        if (DRY_RUN.toBoolean() == false) {
+                            withCredentials([usernamePassword(credentialsId: "dockerhub_id", usernameVariable: "USERNAME", passwordVariable: "PASSWORD")]) {
+                                sh "docker login --username $USERNAME --password $PASSWORD"
+                                sh "docker push ${DOCKERHUB_REPO}:${CUSTOM_TAG}"
+                            }
                         }
                     }
                 }

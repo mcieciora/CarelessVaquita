@@ -1,5 +1,3 @@
-def customImage
-
 pipeline {
     agent {
         label "executor"
