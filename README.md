@@ -33,6 +33,9 @@ known and the moment of extinction will likely go completely unnoticed, but comm
 
 <i>source:</i> [Vaquita - Wikipedia](https://en.wikipedia.org/wiki/Vaquita)
 
+<h3>Discontinuation note</h3>
+Development of this project has ended, and no further updates are planned.
+
 <h2>How to setup</h2>
 <h3>Step-by-step with sources</h3>   
 
